@@ -61,9 +61,43 @@ Continue with the first question that has not been answered.
 ## Style
 Spoken English, conversational, unhurried. Short sentences. No lists, no headings, no emoji — this is voice.`;
 
-export function buildAgentConfig(): ElevenLabs.conversationalAi.BodyCreateAgentV1ConvaiAgentsCreatePost {
-  const questionIds = [...new Set(study.interview.filter((q) => q.required).map((q) => q.id))];
+const questionIds = [...new Set(study.interview.filter((q) => q.required).map((q) => q.id))];
 
+/** Workspace tool definitions, managed by name so re-runs update rather than duplicate. */
+export const TOOL_CONFIGS: ElevenLabs.ToolRequestModelToolConfig.Client[] = [
+  {
+    type: "client",
+    name: CLIENT_TOOLS.markAnswered,
+    description:
+      "Record that the respondent has answered one interview question. Call it immediately after each answer, before asking the next question.",
+    expectsResponse: false,
+    parameters: {
+      type: "object",
+      required: ["question_id", "summary"],
+      properties: {
+        question_id: {
+          type: "string",
+          enum: questionIds,
+          description: "The bracketed id of the question that was just answered, e.g. q4.",
+        },
+        summary: {
+          type: "string",
+          description: "One sentence summarising the respondent's answer, in the third person.",
+        },
+      },
+    },
+  },
+  {
+    type: "client",
+    name: CLIENT_TOOLS.finish,
+    description:
+      "End the interview. Call it after your closing remarks once every question is answered, or if the respondent asks to stop.",
+    expectsResponse: false,
+    parameters: { type: "object", properties: {} },
+  },
+];
+
+export function buildAgentConfig(toolIds: string[]): ElevenLabs.conversationalAi.BodyCreateAgentV1ConvaiAgentsCreatePost {
   return {
     name: `${study.name} — ${study.title}`,
     tags: ["soundings"],
@@ -89,38 +123,7 @@ export function buildAgentConfig(): ElevenLabs.conversationalAi.BodyCreateAgentV
           prompt: PROMPT,
           llm: "gemini-2.5-flash",
           temperature: 0.4,
-          tools: [
-            {
-              type: "client",
-              name: CLIENT_TOOLS.markAnswered,
-              description:
-                "Record that the respondent has answered one interview question. Call it immediately after each answer, before asking the next question.",
-              expectsResponse: false,
-              parameters: {
-                type: "object",
-                required: ["question_id", "summary"],
-                properties: {
-                  question_id: {
-                    type: "string",
-                    enum: questionIds,
-                    description: "The bracketed id of the question that was just answered, e.g. q4.",
-                  },
-                  summary: {
-                    type: "string",
-                    description: "One sentence summarising the respondent's answer, in the third person.",
-                  },
-                },
-              },
-            },
-            {
-              type: "client",
-              name: CLIENT_TOOLS.finish,
-              description:
-                "End the interview. Call it after your closing remarks once every question is answered, or if the respondent asks to stop.",
-              expectsResponse: false,
-              parameters: { type: "object", properties: {} },
-            },
-          ],
+          toolIds,
         },
       },
       conversation: {
