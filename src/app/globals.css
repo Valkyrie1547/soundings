@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+/*
+  Design tokens.
+  Neutrals live here. The accent is study-scoped: StudyShell injects
+  --accent / --on-accent from config/study.ts so swapping the study
+  swaps the brand color without touching this file.
+
+  Light = "Fog"    (cool light ground, ink text)
+  Dark  = "Fathom" (cold blue-black ground, brass accent)
+*/
+:root {
+  --bg: #edeff0;
+  --surface: #f8f9f9;
+  --surface-raised: #ffffff;
+  --line: #d2d7db;
+  --line-strong: #b9c1c7;
+  --text: #15191d;
+  --muted: #67717b;
+  --faint: #98a1a9;
+
+  /* fallbacks; overridden per study by StudyShell */
+  --accent: #1f4e79;
+  --on-accent: #f8f9f9;
+
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur-micro: 160ms;
+  --dur-confirm: 220ms;
+  --dur-screen: 260ms;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1316;
+    --surface: #141a1f;
+    --surface-raised: #1a2128;
+    --line: #26303a;
+    --line-strong: #364350;
+    --text: #e6eaec;
+    --muted: #8b96a0;
+    --faint: #5f6b76;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0e1316;
+  --surface: #141a1f;
+  --surface-raised: #1a2128;
+  --line: #26303a;
+  --line-strong: #364350;
+  --text: #e6eaec;
+  --muted: #8b96a0;
+  --faint: #5f6b76;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+
+  --font-sans: var(--font-instrument), system-ui, sans-serif;
+  --font-display: var(--font-familjen), var(--font-instrument), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --ease-out-quiet: var(--ease);
+  --radius-control: 6px;
+  --radius-key: 4px;
+  --radius-surface: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-micro: 0ms;
+    --dur-confirm: 120ms;
+    --dur-screen: 120ms;
+  }
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color var(--dur-screen) var(--ease), color var(--dur-screen) var(--ease);
+}
+
+/* Keyboard focus: one ring, everywhere. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-control);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+/*
+  Study-scoped accent. StudyShell sets --accent-light / --accent-dark
+  (and the on-accent pair) inline from config; this picks the right one
+  for the active theme. Both themes are defined here so the un-stamped
+  "system" state resolves correctly.
+*/
+.study-scope {
+  --accent: var(--accent-light);
+  --on-accent: var(--on-accent-light);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .study-scope {
+    --accent: var(--accent-dark);
+    --on-accent: var(--on-accent-dark);
+  }
+}
+:root[data-theme="dark"] .study-scope {
+  --accent: var(--accent-dark);
+  --on-accent: var(--on-accent-dark);
+}
