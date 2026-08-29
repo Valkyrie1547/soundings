@@ -8,6 +8,8 @@ interface StudyShellProps {
   stage: string;
   steps: number;
   current: number;
+  /** Interview mode for the rail: audio-reactive weight. */
+  audio?: boolean;
   children: React.ReactNode;
 }
 
@@ -15,7 +17,7 @@ interface StudyShellProps {
  * The frame shared by the survey and the interview: study-scoped accent,
  * the sounding-line rail, and the header. Screens render inside.
  */
-export function StudyShell({ stage, steps, current, children }: StudyShellProps) {
+export function StudyShell({ stage, steps, current, audio, children }: StudyShellProps) {
   const accent = {
     "--accent-light": study.theme.accent.light,
     "--accent-dark": study.theme.accent.dark,
@@ -30,7 +32,7 @@ export function StudyShell({ stage, steps, current, children }: StudyShellProps)
     >
       <aside className="hidden border-r border-line md:block" aria-hidden>
         <div className="sticky top-0 h-dvh py-[12dvh] pl-[35px] pr-[36px]">
-          <SoundingLine steps={steps} current={current} orientation="vertical" />
+          <SoundingLine steps={steps} current={current} audio={audio} orientation="vertical" />
         </div>
       </aside>
 
@@ -50,7 +52,7 @@ export function StudyShell({ stage, steps, current, children }: StudyShellProps)
         </header>
 
         <div className="mt-6 md:hidden">
-          <SoundingLine steps={steps} current={current} orientation="horizontal" />
+          <SoundingLine steps={steps} current={current} audio={audio} orientation="horizontal" />
         </div>
 
         {children}

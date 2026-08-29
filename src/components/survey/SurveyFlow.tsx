@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence } from "motion/react";
 import { study } from "@/config/study";
 import { resolve, type Answers } from "@/lib/survey/engine";
@@ -24,6 +25,7 @@ type Load =
  * without losing the local answer.
  */
 export function SurveyFlow() {
+  const router = useRouter();
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [answers, setAnswers] = useState<Answers>({});
   const [direction, setDirection] = useState<Direction>(1);
@@ -35,6 +37,11 @@ export function SurveyFlow() {
     loadOrCreateRespondent()
       .then((state) => {
         if (cancelled) return;
+        // Already past the survey: this visit belongs to Part 2.
+        if (state.surveyStatus === "qualified") {
+          router.replace(state.interviewStatus === "completed" ? "/transcript" : "/interview");
+          return;
+        }
         setAnswers(state.answers);
         setLoad({ status: "ready", respondentId: state.id });
       })
@@ -44,7 +51,7 @@ export function SurveyFlow() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [router]);
 
   const answer = useCallback(
     (questionId: string, value: string | string[]) => {
@@ -111,9 +118,7 @@ export function SurveyFlow() {
               key={viewing.status}
               outcome={viewing.status}
               direction={direction}
-              onContinue={() => {
-                // Hand-off to the interview lands here once Part 2 exists.
-              }}
+              onContinue={() => router.push("/interview")}
             />
           )}
         </AnimatePresence>

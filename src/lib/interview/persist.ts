@@ -1,0 +1,160 @@
+import { and, asc, eq, isNull } from "drizzle-orm";
+import { db } from "@/db";
+import {
+  interviewProgress,
+  interviewSessions,
+  respondents,
+  transcripts,
+  type TranscriptTurn,
+} from "@/db/schema";
+import type { Outcome } from "@/config/study";
+import { agentId, elevenlabs } from "@/lib/elevenlabs";
+import { buildDynamicVariables, isComplete, type ProgressEntry } from "./session";
+
+export async function loadProgress(respondentId: string): Promise<ProgressEntry[]> {
+  const rows = await db()
+    .select({ questionId: interviewProgress.questionId, summary: interviewProgress.summary })
+    .from(interviewProgress)
+    .where(eq(interviewProgress.respondentId, respondentId))
+    .orderBy(asc(interviewProgress.answeredAt));
+  return rows;
+}
+
+/**
+ * Open a new conversation segment: a session row, a signed URL, and the
+ * dynamic variables that tell the agent where this respondent already is.
+ */
+export async function startInterviewSession(respondentId: string, segment: Outcome) {
+  const progress = await loadProgress(respondentId);
+  const prior = await db()
+    .select({ attemptNo: interviewSessions.attemptNo })
+    .from(interviewSessions)
+    .where(eq(interviewSessions.respondentId, respondentId));
+  const attemptNo = prior.reduce((max, s) => Math.max(max, s.attemptNo), 0) + 1;
+
+  const [session] = await db()
+    .insert(interviewSessions)
+    .values({ respondentId, attemptNo })
+    .returning({ id: interviewSessions.id });
+
+  await db()
+    .update(respondents)
+    .set({ interviewStatus: "in_progress" })
+    .where(and(eq(respondents.id, respondentId), eq(respondents.interviewStatus, "not_started")));
+
+  const { signedUrl } = await elevenlabs().conversationalAi.conversations.getSignedUrl({
+    agentId: agentId(),
+  });
+
+  return {
+    sessionId: session.id,
+    attemptNo,
+    signedUrl,
+    dynamicVariables: buildDynamicVariables(respondentId, segment, progress),
+    progress,
+  };
+}
+
+/** Idempotent: marking the same question twice is a no-op with a fresher summary. */
+export async function markAnswered(respondentId: string, questionId: string, summary: string | null) {
+  await db()
+    .insert(interviewProgress)
+    .values({ respondentId, questionId, summary })
+    .onConflictDoUpdate({
+      target: [interviewProgress.respondentId, interviewProgress.questionId],
+      set: { summary },
+    });
+  return loadProgress(respondentId);
+}
+
+/**
+ * Close a segment. Completion is decided here, from the progress table,
+ * never from what the client claims.
+ */
+export async function endInterviewSession(
+  respondentId: string,
+  segment: Outcome,
+  sessionId: string,
+  conversationId: string | null,
+  reason: "completed" | "dropped" | "user_ended",
+) {
+  await db()
+    .update(interviewSessions)
+    .set({ endedAt: new Date(), endReason: reason, conversationId })
+    .where(and(eq(interviewSessions.id, sessionId), eq(interviewSessions.respondentId, respondentId)));
+
+  const progress = await loadProgress(respondentId);
+  const complete = isComplete(segment, new Set(progress.map((p) => p.questionId)));
+  if (complete) {
+    await db()
+      .update(respondents)
+      .set({ interviewStatus: "completed" })
+      .where(eq(respondents.id, respondentId));
+  }
+  return { complete, progress };
+}
+
+/**
+ * The full interview transcript: every segment's turns, in order. Segments
+ * whose transcript hasn't been stored yet are fetched from ElevenLabs on
+ * demand — no webhook or dashboard config needed, and safe to call early
+ * (a segment still processing is simply retried next time).
+ */
+export async function loadTranscript(respondentId: string) {
+  const pending = await db()
+    .select({ id: interviewSessions.id, conversationId: interviewSessions.conversationId })
+    .from(interviewSessions)
+    .leftJoin(transcripts, eq(transcripts.conversationId, interviewSessions.conversationId))
+    .where(and(eq(interviewSessions.respondentId, respondentId), isNull(transcripts.conversationId)));
+
+  for (const s of pending) {
+    if (!s.conversationId) continue;
+    try {
+      const convo = await elevenlabs().conversationalAi.conversations.get(s.conversationId);
+      if (convo.status === "in-progress" || convo.status === "initiated") continue;
+      const turns: TranscriptTurn[] = convo.transcript
+        .filter((t) => t.message)
+        .map((t) => ({
+          role: t.role === "agent" ? "agent" : "user",
+          message: t.message ?? "",
+          timeInCallSecs: t.timeInCallSecs,
+        }));
+      await db()
+        .insert(transcripts)
+        .values({
+          conversationId: s.conversationId,
+          respondentId,
+          transcript: turns,
+          summary: convo.analysis?.transcriptSummary ?? null,
+        })
+        .onConflictDoNothing();
+    } catch {
+      // Leave it for the next request; the UI shows "still processing".
+    }
+  }
+
+  const rows = await db()
+    .select({
+      attemptNo: interviewSessions.attemptNo,
+      startedAt: interviewSessions.startedAt,
+      endReason: interviewSessions.endReason,
+      conversationId: interviewSessions.conversationId,
+      turns: transcripts.transcript,
+      summary: transcripts.summary,
+    })
+    .from(interviewSessions)
+    .leftJoin(transcripts, eq(transcripts.conversationId, interviewSessions.conversationId))
+    .where(eq(interviewSessions.respondentId, respondentId))
+    .orderBy(asc(interviewSessions.attemptNo));
+
+  return rows
+    .filter((r) => r.conversationId)
+    .map((r) => ({
+      attemptNo: r.attemptNo,
+      startedAt: r.startedAt.toISOString(),
+      endReason: r.endReason,
+      conversationId: r.conversationId!,
+      turns: r.turns ?? null, // null = still processing at ElevenLabs
+      summary: r.summary,
+    }));
+}

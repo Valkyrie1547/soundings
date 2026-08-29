@@ -6,19 +6,23 @@ interface SoundingLineProps {
   /** 0-based mark the respondent is at. */
   current: number;
   orientation?: "vertical" | "horizontal";
+  /**
+   * Interview mode: the weight swells with the moderator's voice and a
+   * halo tracks the respondent's mic, via --agent-level / --mic-level.
+   */
+  audio?: boolean;
   className?: string;
 }
 
 /**
  * The signature element: a sounding line with one mark per step, paid out
  * as the respondent goes deeper. The plumb weight sits at the current mark.
- * Purely presentational — the interview will drive the same element with
- * audio levels via CSS variables.
  */
 export function SoundingLine({
   steps,
   current,
   orientation = "vertical",
+  audio = false,
   className,
 }: SoundingLineProps) {
   const clamped = Math.min(Math.max(current, 0), steps - 1);
@@ -31,7 +35,7 @@ export function SoundingLine({
       aria-valuemin={1}
       aria-valuemax={steps}
       aria-valuenow={clamped + 1}
-      aria-label={`Question ${clamped + 1} of ${steps}`}
+      aria-label={`Step ${clamped + 1} of ${steps}`}
       className={cn("relative", vertical ? "h-full w-full" : "h-6 w-full", className)}
     >
       {/* the line, and the portion paid out */}
@@ -82,17 +86,33 @@ export function SoundingLine({
         );
       })}
 
-      {/* the weight */}
+      {/* the weight, with a mic halo in audio mode */}
       <span
         aria-hidden
-        className="absolute size-[9px] bg-accent transition-[top,left] duration-(--dur-screen) ease-(--ease)"
-        style={{
-          clipPath: "polygon(50% 0, 100% 40%, 50% 100%, 0 40%)",
-          ...(vertical
+        className="absolute size-[9px] transition-[top,left] duration-(--dur-screen) ease-(--ease)"
+        style={
+          vertical
             ? { left: "calc(50% - 4px)", top: `calc(${pct}% - 4px)` }
-            : { top: "calc(50% - 4px)", left: `calc(${pct}% - 4px)` }),
-        }}
-      />
+            : { top: "calc(50% - 4px)", left: `calc(${pct}% - 4px)` }
+        }
+      >
+        {audio && (
+          <span
+            className="absolute -inset-2 rounded-full border border-accent/40"
+            style={{
+              transform: "scale(calc(1 + var(--mic-level, 0) * 1.4))",
+              opacity: "calc(0.25 + var(--mic-level, 0))",
+            }}
+          />
+        )}
+        <span
+          className="absolute inset-0 bg-accent"
+          style={{
+            clipPath: "polygon(50% 0, 100% 40%, 50% 100%, 0 40%)",
+            transform: audio ? "scale(calc(1 + var(--agent-level, 0) * 1.8))" : undefined,
+          }}
+        />
+      </span>
     </div>
   );
 }
