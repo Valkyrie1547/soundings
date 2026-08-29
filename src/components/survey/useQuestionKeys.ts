@@ -12,14 +12,14 @@ interface QuestionKeysOptions {
 }
 
 /** True when a modifier key is held or the event comes from a text field. Do not handle these events. */
-function isReserved(e: KeyboardEvent): boolean {
+export function isReserved(e: KeyboardEvent): boolean {
   if (e.metaKey || e.ctrlKey || e.altKey) return true;
   const target = e.target as HTMLElement | null;
   return target !== null && ["INPUT", "TEXTAREA"].includes(target.tagName);
 }
 
 /** The index that gets focus after an arrow key. Focus wraps at both ends. */
-function nextFocusIndex(focused: number, step: 1 | -1, count: number): number {
+export function nextFocusIndex(focused: number, step: 1 | -1, count: number): number {
   if (focused === -1) return step === 1 ? 0 : count - 1;
   return (focused + step + count) % count;
 }

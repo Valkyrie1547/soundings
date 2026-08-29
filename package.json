@@ -11,7 +11,9 @@
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
     "agent:setup": "node --env-file=.env.local --import tsx scripts/setup-agent.ts",
-    "lint:complexity": "eslint --rule \"complexity: [warn, 5]\" src scripts"
+    "lint:complexity": "eslint --rule \"complexity: [warn, 5]\" src scripts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.65.0",
@@ -27,6 +29,8 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -34,8 +38,10 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
+    "jsdom": "^30.0.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.12",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }

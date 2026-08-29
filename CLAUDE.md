@@ -50,4 +50,8 @@ Do not put secrets in the vault.
 - `INTERVIEW_SHORT_MODE` is for local development only. Never set it on Vercel.
 - The ElevenLabs agent is code: change `src/lib/interview/agent-config.ts`, then run `npm run agent:setup`. Do not edit the agent in the dashboard.
 - Files use LF line endings (`.gitattributes`). If a file shows CRLF, normalise it.
-- Before a commit: `npm run typecheck && npm run lint`.
+- Before a commit: `npm run typecheck && npm run lint && npm test`.
+
+## 5. Unit tests
+
+Vitest. Test files sit next to the code (`foo.test.ts`). Node environment by default; a file that needs a DOM starts with `// @vitest-environment jsdom`. Tests never touch the database, ElevenLabs, or a live socket: mock `@/lib/survey/persist` and `@/lib/interview/persist` at the module boundary, never the study config or the pure `lib/` functions. The full brief for adding tests is `docs/prompts/unit-tests.md`. When you change a pure function or a route handler, update or add its test in the same change.

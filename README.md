@@ -31,6 +31,8 @@ To start as a new respondent, open the app with `?new=1` in the URL.
 | `npm run lint` | Runs ESLint. Fails when a function has a cyclomatic complexity above 10. |
 | `npm run lint:complexity` | Reports each function with a complexity above 5. |
 | `npm run typecheck` | Runs the TypeScript compiler without output. |
+| `npm test` | Runs the unit tests once (Vitest). |
+| `npm run test:watch` | Runs the unit tests in watch mode. |
 | `npm run db:push` | Pushes the Drizzle schema to the database. |
 | `npm run db:studio` | Opens Drizzle Studio. |
 | `npm run agent:setup` | Creates or updates the ElevenLabs agent from code. |
@@ -58,6 +60,7 @@ scripts/setup-agent.ts       Sends the agent configuration to ElevenLabs
 
 - Comments and this README follow ASD-STE100 (Simplified Technical English).
 - Cyclomatic complexity: 1 to 5 is fine. 6 to 10 is the watch band. 11 and above fails lint.
+- Unit tests sit next to the code as `*.test.ts`. They run without a database, ElevenLabs, or a browser session.
 - See `CLAUDE.md` for the full rules.
 
 ## Documents
