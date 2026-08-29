@@ -33,6 +33,8 @@ function Interview() {
   const [phase, setPhase] = useState<InterviewPhase>("loading");
   const [answered, setAnswered] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // True after the agent calls finish_interview. The call ends when the agent stops speaking.
+  const [finishPending, setFinishPending] = useState(false);
 
   // Session data that callbacks read without a new binding.
   const sessionIdRef = useRef<string | null>(null);
@@ -102,11 +104,12 @@ function Interview() {
       },
       [CLIENT_TOOLS.finish]: async () => {
         intentRef.current = "finish";
-        conversation.endSession();
+        setFinishPending(true);
       },
     },
     onConnect: ({ conversationId }) => {
       conversationIdRef.current = conversationId;
+      setFinishPending(false);
       setPhase("live");
     },
     onDisconnect: (details) => {
@@ -123,6 +126,19 @@ function Interview() {
 
   const { startSession, endSession, getInputVolume, getOutputVolume, isSpeaking, status } = conversation;
   useAudioLevels(phase === "live", getOutputVolume, getInputVolume);
+
+  // The agent calls the finish tool while its closing words still play. Wait until
+  // it is silent for a moment, then end the session. A hard limit stops a long wait.
+  useEffect(() => {
+    if (!finishPending || isSpeaking) return;
+    const t = window.setTimeout(() => endSession(), 1500);
+    return () => window.clearTimeout(t);
+  }, [finishPending, isSpeaking, endSession]);
+  useEffect(() => {
+    if (!finishPending) return;
+    const t = window.setTimeout(() => endSession(), 20000);
+    return () => window.clearTimeout(t);
+  }, [finishPending, endSession]);
 
   const begin = useCallback(async () => {
     if (!respondent) return;

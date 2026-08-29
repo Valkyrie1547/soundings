@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence } from "motion/react";
 import { study } from "@/config/study";
@@ -32,6 +32,9 @@ export function SurveyFlow() {
   const [direction, setDirection] = useState<Direction>(1);
   const [cursor, setCursor] = useState<number | null>(null); // Set after a step back.
   const [saveError, setSaveError] = useState<string | null>(null);
+  // The last save. The outcome screen waits for it before it goes to the interview.
+  const pendingSave = useRef<Promise<unknown> | null>(null);
+  const lastAnswer = useRef<{ questionId: string; value: string | string[] } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,12 +64,32 @@ export function SurveyFlow() {
       setAnswers((prev) => ({ ...prev, [questionId]: value }));
       setSaveError(null);
       if (load.status !== "ready") return;
-      saveAnswer(load.respondentId, questionId, value).catch(() => {
+      lastAnswer.current = { questionId, value };
+      pendingSave.current = saveAnswer(load.respondentId, questionId, value).catch(() => {
         setSaveError("Your last answer didn't save. Check your connection — it will retry when you continue.");
+        throw new Error("save failed");
       });
     },
     [load],
   );
+
+  // Go to the interview only after the server has the final answer. Try the save once more when it failed.
+  const continueToInterview = useCallback(async () => {
+    if (load.status !== "ready") return;
+    try {
+      await pendingSave.current;
+    } catch {
+      const last = lastAnswer.current;
+      if (!last) return;
+      try {
+        await saveAnswer(load.respondentId, last.questionId, last.value);
+        setSaveError(null);
+      } catch {
+        return;
+      }
+    }
+    router.push("/interview");
+  }, [load, router]);
 
   const back = useCallback((fromIndex: number) => {
     setDirection(-1);
@@ -119,7 +142,7 @@ export function SurveyFlow() {
               key={viewing.status}
               outcome={viewing.status}
               direction={direction}
-              onContinue={() => router.push("/interview")}
+              onContinue={continueToInterview}
             />
           )}
         </AnimatePresence>
