@@ -40,6 +40,19 @@ export interface MultiSelectQuestion extends BaseQuestion {
 
 export type Question = SingleSelectQuestion | MultiSelectQuestion;
 
+/** One item in the interview guide. */
+export interface InterviewQuestion {
+  id: string;
+  /** Which respondents hear it. */
+  audience: "all" | Outcome;
+  /** Counted toward completion. The readiness check (q1) is not. */
+  required: boolean;
+  /** The moderator's wording, as given in the study brief. */
+  text: string;
+  /** Short label used in progress UI and resume acknowledgements. */
+  topic: string;
+}
+
 export interface StudyConfig {
   /** Product name shown in the header. */
   name: string;
@@ -50,6 +63,8 @@ export interface StudyConfig {
     onAccent: { light: string; dark: string };
   };
   screening: Question[];
+  /** Ordered interview guide; filtered by segment at runtime. */
+  interview: InterviewQuestion[];
   /**
    * When a multi-select answer mixes qualifying and terminating brands,
    * qualification wins, and the first outcome listed here wins over later
@@ -121,4 +136,37 @@ export const study: StudyConfig = {
       ],
     },
   ],
+  interview: [
+    {
+      id: "q1",
+      audience: "all",
+      required: false,
+      topic: "getting started",
+      text: "Thank you for participating in our survey. I'm going to ask you 10-15 questions about your car ownership experience. This should take about 10-15 minutes. Are you ready to begin?",
+    },
+    { id: "q2", audience: "all", required: true, topic: "how long you've owned your vehicle", text: "How long have you owned your current vehicle?" },
+    { id: "q3", audience: "all", required: true, topic: "what influenced your purchase", text: "What were the main factors that influenced your decision to purchase this specific brand?" },
+    { id: "q4", audience: "all", required: true, topic: "your satisfaction rating", text: "On a scale of 1 to 10, how satisfied are you with your current vehicle?" },
+    { id: "q5", audience: "all", required: true, topic: "the features you value most", text: "What features or aspects of your car do you value most?" },
+    { id: "q6", audience: "all", required: true, topic: "issues or concerns with your vehicle", text: "Have you experienced any issues or concerns with your vehicle?" },
+
+    { id: "q7", audience: "bmw_customer", required: true, topic: "why you chose BMW over other luxury brands", text: "What made you choose BMW over other luxury brands like Mercedes or Audi?" },
+    { id: "q8", audience: "bmw_customer", required: true, topic: "BMW's customer service and dealership experience", text: "How would you rate BMW's customer service and dealership experience?" },
+    { id: "q9", audience: "bmw_customer", required: true, topic: "which BMW model you own", text: "Which BMW model do you own, and what do you love most about it?" },
+    { id: "q10", audience: "bmw_customer", required: true, topic: "whether you'd buy another BMW", text: "How likely are you to purchase another BMW in the future? What would make you consider switching brands?" },
+    { id: "q11", audience: "bmw_customer", required: true, topic: "what BMW could improve", text: "What could BMW improve to make your ownership experience even better?" },
+
+    { id: "q7", audience: "potential_bmw_customer", required: true, topic: "whether you've considered a BMW", text: "Have you ever considered purchasing a BMW? Why or why not?" },
+    { id: "q8", audience: "potential_bmw_customer", required: true, topic: "your impressions of the BMW brand", text: "What perceptions or impressions do you have of the BMW brand?" },
+    { id: "q9", audience: "potential_bmw_customer", required: true, topic: "what it would take to switch to BMW", text: "What would it take for you to switch to BMW for your next vehicle purchase?" },
+    { id: "q10", audience: "potential_bmw_customer", required: true, topic: "what your current brand does better", text: "Compared to BMW, what do you think your current brand does better?" },
+    { id: "q11", audience: "potential_bmw_customer", required: true, topic: "which luxury brand you'd recommend", text: "If you were to recommend a luxury car brand to a friend, which would you choose and why?" },
+
+    { id: "q12", audience: "all", required: true, topic: "anything else about your ownership experience", text: "Is there anything else you'd like to share about your vehicle ownership experience?" },
+  ],
 };
+
+/** The guide one segment actually hears, in order. */
+export function interviewGuideFor(segment: Outcome): InterviewQuestion[] {
+  return study.interview.filter((q) => q.audience === "all" || q.audience === segment);
+}

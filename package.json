@@ -9,9 +9,12 @@
     "lint": "eslint",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "agent:setup": "node --env-file=.env.local --import tsx scripts/setup-agent.ts"
   },
   "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.65.0",
+    "@elevenlabs/react": "^1.15.0",
     "@neondatabase/serverless": "^1.1.0",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
