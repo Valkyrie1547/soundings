@@ -51,7 +51,7 @@ export async function startInterviewSession(respondentId: string, segment: Outco
     sessionId: session.id,
     attemptNo,
     signedUrl,
-    dynamicVariables: buildDynamicVariables(respondentId, segment, progress),
+    dynamicVariables: buildDynamicVariables(respondentId, segment, progress, attemptNo),
     progress,
   };
 }

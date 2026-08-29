@@ -97,6 +97,14 @@ describe("buildDynamicVariables", () => {
     expect(v.prior_context).toBe(`- how long you've owned your vehicle: Owned for three years.\n- ${q3.topic}: (answered)`);
   });
 
+  it("treats a second session with no progress as a resume", () => {
+    const v = buildDynamicVariables("rid-1", "bmw_customer", [], 2);
+    expect(v.is_resume).toBe(true);
+    expect(String(v.opening_line)).toMatch(/^Welcome back/);
+    expect(String(v.opening_line)).not.toContain("discussing");
+    expect(v.remaining_count).toBe(11);
+  });
+
   it("takes the last topic from guide order, not answer order", () => {
     const v = buildDynamicVariables("rid-1", "bmw_customer", [
       { questionId: "q5", summary: "s5" },
