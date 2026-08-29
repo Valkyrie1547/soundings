@@ -12,7 +12,10 @@ const PARAM = "rid";
  * this is a resumable session, not an authenticated account.
  */
 function readId(): string | null {
-  const fromUrl = new URLSearchParams(window.location.search).get(PARAM);
+  const params = new URLSearchParams(window.location.search);
+  // ?new=1 forces a fresh respondent — handy for demos and testing.
+  if (params.has("new")) return null;
+  const fromUrl = params.get(PARAM);
   if (fromUrl) return fromUrl;
   try {
     return localStorage.getItem(KEY);
@@ -26,8 +29,9 @@ function writeId(id: string) {
     localStorage.setItem(KEY, id);
   } catch {}
   const url = new URL(window.location.href);
-  if (url.searchParams.get(PARAM) !== id) {
+  if (url.searchParams.get(PARAM) !== id || url.searchParams.has("new")) {
     url.searchParams.set(PARAM, id);
+    url.searchParams.delete("new");
     window.history.replaceState(null, "", url);
   }
 }
