@@ -6,6 +6,7 @@ import { screenTransition, screenVariants, screenVariantsQuiet, type Direction }
 import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { KeyHint } from "@/components/ui/KeyHint";
+import { Notice } from "@/components/ui/Notice";
 import { QuestionRenderer } from "./QuestionRenderer";
 
 interface QuestionScreenProps {
@@ -13,6 +14,8 @@ interface QuestionScreenProps {
   index: number;
   value?: string | string[];
   direction: Direction;
+  /** A problem worth telling the respondent about, e.g. a failed save. */
+  notice?: string | null;
   onAnswer: (value: string | string[]) => void;
   onBack?: () => void;
 }
@@ -22,7 +25,7 @@ interface QuestionScreenProps {
  * custom={direction} mode="wait"> so the outgoing question exits in the
  * same direction the incoming one enters.
  */
-export function QuestionScreen({ question, index, value, direction, onAnswer, onBack }: QuestionScreenProps) {
+export function QuestionScreen({ question, index, value, direction, notice, onAnswer, onBack }: QuestionScreenProps) {
   const quiet = useReducedMotion();
   const eyebrow = question.type === "multi" ? (question.hint ?? "Select all that apply") : "Select one";
   const last = question.options.length;
@@ -48,6 +51,7 @@ export function QuestionScreen({ question, index, value, direction, onAnswer, on
             {question.prompt}
           </h1>
           <QuestionRenderer question={question} value={value} onAnswer={onAnswer} />
+          {notice && <Notice title={notice} className="mt-6" />}
         </div>
       </div>
 
