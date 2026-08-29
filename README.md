@@ -15,7 +15,7 @@ Soundings is a research pipeline in one session. A screening survey routes quali
 ## Run the app locally
 
 1. Install the dependencies: `npm install`
-2. Copy `.env.example` to `.env.local`. Fill in the values.
+2. Make `.env.local` with `DATABASE_URL`, `ELEVENLABS_API_KEY`, and `ELEVENLABS_AGENT_ID`.
 3. Push the schema to the database: `npm run db:push`
 4. Create the ElevenLabs agent: `npm run agent:setup`. Put the printed agent id in `.env.local`.
 5. Start the development server: `npm run dev`
