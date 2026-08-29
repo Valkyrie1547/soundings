@@ -18,18 +18,19 @@ type Load =
   | { status: "failed" };
 
 /**
- * Drives the screening survey from stored answers. On load, the server's
- * answers decide the screen — so a fresh visit, a refresh mid-survey, and a
- * return days later are all the same code path. Each answer is saved as it
- * is given; the UI advances optimistically and surfaces a save failure
- * without losing the local answer.
+ * Runs the screening survey from stored answers. On load, the answers from
+ * the server decide the screen. A first visit, a refresh in the middle of
+ * the survey, and a return after some days use the same code path. The
+ * client saves each answer when the user gives it. The UI advances before
+ * the save completes. When a save fails, the UI shows a notice and keeps
+ * the local answer.
  */
 export function SurveyFlow() {
   const router = useRouter();
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [answers, setAnswers] = useState<Answers>({});
   const [direction, setDirection] = useState<Direction>(1);
-  const [cursor, setCursor] = useState<number | null>(null); // set when stepping back
+  const [cursor, setCursor] = useState<number | null>(null); // Set after a step back.
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export function SurveyFlow() {
     loadOrCreateRespondent()
       .then((state) => {
         if (cancelled) return;
-        // Already past the survey: this visit belongs to Part 2.
+        // The survey is complete. This visit goes to Part 2.
         if (state.surveyStatus === "qualified") {
           router.replace(state.interviewStatus === "completed" ? "/transcript" : "/interview");
           return;
@@ -75,7 +76,7 @@ export function SurveyFlow() {
   const state = resolve(study, answers);
   const total = study.screening.length;
 
-  // Stepping back shows an already-answered question, pre-filled.
+  // A step back shows an answered question with its stored value.
   const viewing =
     cursor !== null
       ? { status: "in_progress" as const, question: study.screening[cursor], index: cursor }

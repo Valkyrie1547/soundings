@@ -6,7 +6,7 @@ interface NoticeProps {
   className?: string;
 }
 
-/** A quiet, in-frame message for errors and empty states. Explains, doesn't apologise. */
+/** A quiet message in the frame, for errors and empty states. It explains. It does not apologize. */
 export function Notice({ title, body, className }: NoticeProps) {
   return (
     <div

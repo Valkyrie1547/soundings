@@ -4,18 +4,19 @@ import { SoundingLine } from "@/components/ui/SoundingLine";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 interface StudyShellProps {
-  /** Right-hand header label, e.g. "Screening · 1 of 4". */
+  /** The label at the right of the header, for example "Screening · 1 of 4". */
   stage: string;
   steps: number;
   current: number;
-  /** Interview mode for the rail: audio-reactive weight. */
+  /** Interview mode for the rail. The weight reacts to audio. */
   audio?: boolean;
   children: React.ReactNode;
 }
 
 /**
- * The frame shared by the survey and the interview: study-scoped accent,
- * the sounding-line rail, and the header. Screens render inside.
+ * The frame that the survey and the interview share. It sets the study
+ * accent, shows the sounding-line rail, and shows the header. Screens render
+ * inside it.
  */
 export function StudyShell({ stage, steps, current, audio, children }: StudyShellProps) {
   const accent = {

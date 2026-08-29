@@ -4,7 +4,7 @@ import { isUuid } from "@/lib/validate";
 
 const REASONS = ["completed", "dropped", "user_ended"] as const;
 
-/** Close a conversation segment; the server decides whether the interview is complete. */
+/** Closes a conversation segment. The server decides if the interview is complete. */
 export async function POST(req: Request, ctx: RouteContext<"/api/respondents/[id]/interview/end">) {
   const { id } = await ctx.params;
   if (!isUuid(id)) return Response.json({ error: "Invalid respondent id" }, { status: 400 });

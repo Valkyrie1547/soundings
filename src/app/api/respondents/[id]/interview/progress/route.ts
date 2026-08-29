@@ -3,7 +3,7 @@ import { markAnswered } from "@/lib/interview/persist";
 import { requiredIds } from "@/lib/interview/session";
 import { isUuid } from "@/lib/validate";
 
-/** The agent (via a client tool) says a question was answered. */
+/** The agent reports, through a client tool, that a question is answered. */
 export async function POST(req: Request, ctx: RouteContext<"/api/respondents/[id]/interview/progress">) {
   const { id } = await ctx.params;
   if (!isUuid(id)) return Response.json({ error: "Invalid respondent id" }, { status: 400 });

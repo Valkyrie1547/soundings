@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark";
 
-/** The theme the page is actually showing: the stamp if set, else the OS. */
+/** The theme that the page shows now: the data-theme value if set, else the OS preference. */
 function readTheme(): Theme {
   const stamped = document.documentElement.dataset.theme;
   if (stamped === "light" || stamped === "dark") return stamped;
@@ -22,10 +22,10 @@ function subscribe(onChange: () => void) {
   };
 }
 
-/** Switches between the light (Fog) and dark (Fathom) token sets. */
+/** Changes between the light (Fog) and the dark (Fathom) token sets. */
 export function ThemeToggle() {
-  // Server snapshot is "light"; the pre-paint script in layout.tsx means
-  // the DOM is already correct by the time this hydrates.
+  // The server snapshot is "light". The pre-paint script in layout.tsx
+  // makes the DOM correct before this component hydrates.
   const theme = useSyncExternalStore(subscribe, readTheme, () => "light" as Theme);
 
   function toggle() {
@@ -46,7 +46,7 @@ export function ThemeToggle() {
       title={label}
       className="grid size-8 place-items-center rounded-control text-muted transition-colors duration-(--dur-micro) ease-(--ease) hover:text-text"
     >
-      {/* half-filled disc: reads as "the other side" in either theme */}
+      {/* A half-filled disc. It means "the other side" in each theme. */}
       <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
         <circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" strokeWidth="1.25" />
         <path d="M7 1a6 6 0 0 1 0 12Z" fill="currentColor" />

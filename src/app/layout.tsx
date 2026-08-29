@@ -27,9 +27,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * Applies the stored theme before first paint so a dark-mode user
- * never sees a flash of the light palette. Absent a stored choice,
- * nothing is stamped and the OS preference wins via CSS.
+ * Applies the stored theme before the first paint. A dark-mode user does not
+ * see a flash of the light palette. When there is no stored choice, the
+ * script sets nothing and CSS applies the OS preference.
  */
 const themeInit = `(function(){try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark"){document.documentElement.dataset.theme=t}}catch(e){}})();`;
 

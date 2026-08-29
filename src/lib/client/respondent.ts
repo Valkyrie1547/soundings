@@ -6,14 +6,13 @@ const KEY = "soundings:rid";
 const PARAM = "rid";
 
 /**
- * Respondent identity on the client. The id lives in localStorage and is
- * mirrored into the URL (?rid=), so a copied link resumes the same session
- * in another window — handy for demos, and honest about the trade-off:
- * this is a resumable session, not an authenticated account.
+ * The respondent identity on the client. The id is in localStorage and also
+ * in the URL (?rid=). A copied link resumes the same session in a different
+ * window. This is a resumable session, not an authenticated account.
  */
 function readId(): string | null {
   const params = new URLSearchParams(window.location.search);
-  // ?new=1 forces a fresh respondent — handy for demos and testing.
+  // ?new=1 makes a new respondent. Use it for demos and tests.
   if (params.has("new")) return null;
   const fromUrl = params.get(PARAM);
   if (fromUrl) return fromUrl;
@@ -36,7 +35,7 @@ function writeId(id: string) {
   }
 }
 
-/** Resolve the current respondent, creating one on first visit. */
+/** Gets the current respondent. Creates one on the first visit. */
 export async function loadOrCreateRespondent(): Promise<RespondentState> {
   const id = readId();
   if (id) {
@@ -47,7 +46,7 @@ export async function loadOrCreateRespondent(): Promise<RespondentState> {
       return state;
     }
     if (res.status !== 404 && res.status !== 400) throw new Error(`Load failed (${res.status})`);
-    // Unknown id (e.g. a stale link): fall through and start fresh.
+    // The id is unknown, for example from an old link. Continue and start new.
   }
   const res = await fetch("/api/respondents", { method: "POST" });
   if (!res.ok) throw new Error(`Create failed (${res.status})`);

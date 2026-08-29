@@ -44,7 +44,7 @@ export function endInterview(
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ sessionId, conversationId, reason }),
-    keepalive: true, // survives tab close
+    keepalive: true, // The request continues after the tab closes.
   }).then((r) => json<{ complete: boolean; progress: ProgressEntry[] }>(r));
 }
 

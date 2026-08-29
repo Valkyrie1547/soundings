@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
 
-/** Small mono label above a heading. */
+/** A small monospace label above a heading. */
 export function Eyebrow({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div

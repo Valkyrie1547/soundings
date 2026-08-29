@@ -11,9 +11,9 @@ export interface RespondentState {
   segment: "bmw_customer" | "potential_bmw_customer" | null;
   interviewStatus: "not_started" | "in_progress" | "completed";
   answers: Answers;
-  /** Interview questions already marked answered, in the order they were. */
+  /** The interview questions that are marked answered, in the order they were marked. */
   interviewProgress: string[];
-  /** The required interview questions this respondent's segment hears, in order. */
+  /** The required interview questions for this respondent's segment, in order. */
   interviewGuide: { id: string; topic: string }[];
 }
 
@@ -41,9 +41,9 @@ export async function loadRespondent(id: string): Promise<RespondentState | null
 }
 
 /**
- * Upsert one answer, then re-derive the respondent's survey status and
- * segment from the full answer set. The engine — not the client — decides
- * the outcome, so a tampered request can't self-qualify.
+ * Saves one answer, then calculates the survey status and the segment again
+ * from the full answer set. The engine decides the outcome, not the client.
+ * A changed request cannot qualify itself.
  */
 export async function saveAnswer(
   id: string,
@@ -52,7 +52,7 @@ export async function saveAnswer(
 ): Promise<RespondentState | null> {
   const existing = await loadRespondent(id);
   if (!existing) return null;
-  if (existing.surveyStatus === "screened_out") return existing; // terminal: no retake
+  if (existing.surveyStatus === "screened_out") return existing; // Terminal state. There is no retake.
 
   await db()
     .insert(surveyAnswers)

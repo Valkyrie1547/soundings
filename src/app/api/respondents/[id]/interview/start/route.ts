@@ -2,7 +2,7 @@ import { loadRespondent } from "@/lib/survey/persist";
 import { startInterviewSession } from "@/lib/interview/persist";
 import { isUuid } from "@/lib/validate";
 
-/** Open a conversation segment: session row + signed URL + resume context. */
+/** Opens a conversation segment. Returns the session row, a signed URL, and the resume context. */
 export async function POST(_req: Request, ctx: RouteContext<"/api/respondents/[id]/interview/start">) {
   const { id } = await ctx.params;
   if (!isUuid(id)) return Response.json({ error: "Invalid respondent id" }, { status: 400 });

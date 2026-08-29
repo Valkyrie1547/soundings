@@ -5,18 +5,31 @@ import { useEffect, useRef } from "react";
 interface QuestionKeysOptions {
   count: number;
   enabled: boolean;
-  /** Digit 1..count pressed, or Enter on a focused option (0-based). */
+  /** Called when the user presses a digit 1..count, or Enter on an option that has focus. The index is 0-based. */
   onPick: (index: number) => void;
-  /** Enter pressed with no option focused. */
+  /** Called when the user presses Enter and no option has focus. */
   onAdvance: () => void;
 }
 
+/** True when a modifier key is held or the event comes from a text field. Do not handle these events. */
+function isReserved(e: KeyboardEvent): boolean {
+  if (e.metaKey || e.ctrlKey || e.altKey) return true;
+  const target = e.target as HTMLElement | null;
+  return target !== null && ["INPUT", "TEXTAREA"].includes(target.tagName);
+}
+
+/** The index that gets focus after an arrow key. Focus wraps at both ends. */
+function nextFocusIndex(focused: number, step: 1 | -1, count: number): number {
+  if (focused === -1) return step === 1 ? 0 : count - 1;
+  return (focused + step + count) % count;
+}
+
 /**
- * Keyboard-first interaction shared by every question type:
- *   1–9   pick an option
- *   ↑ ↓   move focus between options
- *   ↵     confirm (native click on the focused option) or continue
- * Returns a ref-setter to register option buttons in order.
+ * Keyboard control that all question types share:
+ *   1-9    select an option
+ *   Up/Down  move focus between options
+ *   Enter  confirm the option that has focus (native click), or continue
+ * Returns a ref setter. Use it to register each option button in order.
  */
 export function useQuestionKeys({ count, enabled, onPick, onAdvance }: QuestionKeysOptions) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -24,34 +37,32 @@ export function useQuestionKeys({ count, enabled, onPick, onAdvance }: QuestionK
   useEffect(() => {
     if (!enabled) return;
 
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const target = e.target as HTMLElement | null;
-      if (target && ["INPUT", "TEXTAREA"].includes(target.tagName)) return;
+    function handleDigit(e: KeyboardEvent) {
+      const index = Number(e.key) - 1;
+      if (index >= count) return;
+      e.preventDefault();
+      onPick(index);
+    }
 
+    function handleArrow(e: KeyboardEvent) {
+      e.preventDefault();
       const focused = refs.current.findIndex((el) => el === document.activeElement);
+      const step = e.key === "ArrowDown" ? 1 : -1;
+      refs.current[nextFocusIndex(focused, step, count)]?.focus();
+    }
 
-      if (/^[1-9]$/.test(e.key)) {
-        const index = Number(e.key) - 1;
-        if (index < count) {
-          e.preventDefault();
-          onPick(index);
-        }
-        return;
-      }
+    function handleEnter(e: KeyboardEvent) {
+      const focused = refs.current.some((el) => el === document.activeElement);
+      if (focused) return; // The button's native click handles this.
+      e.preventDefault();
+      onAdvance();
+    }
 
-      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-        e.preventDefault();
-        const step = e.key === "ArrowDown" ? 1 : -1;
-        const next = focused === -1 ? (step === 1 ? 0 : count - 1) : (focused + step + count) % count;
-        refs.current[next]?.focus();
-        return;
-      }
-
-      if (e.key === "Enter" && focused === -1) {
-        e.preventDefault();
-        onAdvance();
-      }
+    function onKey(e: KeyboardEvent) {
+      if (isReserved(e)) return;
+      if (/^[1-9]$/.test(e.key)) return handleDigit(e);
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") return handleArrow(e);
+      if (e.key === "Enter") return handleEnter(e);
     }
 
     window.addEventListener("keydown", onKey);

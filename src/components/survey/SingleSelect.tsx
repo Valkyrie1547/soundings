@@ -8,16 +8,16 @@ import { useQuestionKeys } from "./useQuestionKeys";
 
 interface SingleSelectProps {
   question: SingleSelectQuestion;
-  /** Pre-populated on resume or when stepping back. */
+  /** The stored value, on resume or after a step back. */
   value?: string;
   onAnswer: (optionId: string) => void;
 }
 
 /**
- * Pick one, and the screen advances on its own after a short confirm beat —
- * long enough to see the choice register, short enough to feel immediate.
- * A pre-filled value waits for Enter instead, so stepping back never
- * re-submits by accident.
+ * The user selects one option. The screen advances on its own after a short
+ * confirm delay. The delay is long enough to show the choice and short
+ * enough to feel immediate. A stored value waits for Enter instead. A step
+ * back does not send the answer again by accident.
  */
 export function SingleSelect({ question, value, onAnswer }: SingleSelectProps) {
   const [chosen, setChosen] = useState<string | undefined>(value);

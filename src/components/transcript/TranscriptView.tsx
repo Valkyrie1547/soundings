@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { loadOrCreateRespondent } from "@/lib/client/respondent";
-import { fetchTranscript, type TranscriptResponse } from "@/lib/client/interview";
+import { fetchTranscript, type TranscriptResponse, type TranscriptSegment } from "@/lib/client/interview";
+import type { TranscriptTurn } from "@/db/schema";
 import { StudyShell } from "@/components/layout/StudyShell";
 import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
@@ -15,9 +16,15 @@ const SEGMENT_LABEL = {
   potential_bmw_customer: "Potential BMW Customer",
 } as const;
 
+const END_REASON_LABEL = {
+  completed: "completed",
+  dropped: "connection lost",
+  user_ended: "user ended",
+} as const;
+
 /**
- * The stored transcript, stitched from every conversation segment in order.
- * Segments still processing at ElevenLabs are polled until they arrive.
+ * The stored transcript. It shows every conversation segment in order.
+ * The view polls the server for segments that ElevenLabs has not processed yet.
  */
 export function TranscriptView() {
   const router = useRouter();
@@ -47,7 +54,7 @@ export function TranscriptView() {
     return () => clearInterval(t);
   }, [pending, load]);
 
-  const turns = data?.segments.flatMap((s) => s.turns ?? []) ?? [];
+  const turnCount = data?.segments.reduce((n, s) => n + (s.turns?.length ?? 0), 0) ?? 0;
 
   return (
     <StudyShell stage="Transcript" steps={1} current={0}>
@@ -59,62 +66,13 @@ export function TranscriptView() {
           <h1 className="mb-3 font-display text-[30px] font-medium leading-[1.12] tracking-[-0.015em] text-balance md:text-[40px] md:leading-[1.1]">
             Your interview transcript
           </h1>
-          {data && (
-            <p className="mb-8 font-mono text-[12px] text-muted">
-              {data.segment ? SEGMENT_LABEL[data.segment] : ""} · {data.segments.length} session
-              {data.segments.length === 1 ? "" : "s"} · {turns.length} turns
-            </p>
-          )}
 
           {failed && <Notice title="Couldn't load the transcript" body="Reload the page to try again." />}
 
-          {data && data.interviewStatus !== "completed" && (
-            <div className="mb-8">
-              <Button onClick={() => router.push("/interview")}>Resume interview</Button>
-            </div>
-          )}
-
-          {data && (
-            <div className="mb-8 flex flex-wrap items-center gap-2">
-              <Button variant="quiet" onClick={() => download(data, "txt")} disabled={turns.length === 0}>
-                Download .txt
-              </Button>
-              <Button variant="quiet" onClick={() => download(data, "json")} disabled={turns.length === 0}>
-                Download .json
-              </Button>
-            </div>
-          )}
+          {data && <Actions data={data} turnCount={turnCount} onResume={() => router.push("/interview")} />}
 
           {data?.segments.map((seg) => (
-            <section key={seg.conversationId} className="mb-10">
-              <div className="mb-4 flex items-center gap-3 border-b border-line pb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-muted">
-                <span>Session {seg.attemptNo}</span>
-                <span className="text-faint">·</span>
-                <span>{new Date(seg.startedAt).toLocaleString()}</span>
-                {seg.endReason && (
-                  <>
-                    <span className="text-faint">·</span>
-                    <span>{seg.endReason === "dropped" ? "connection lost" : seg.endReason.replace("_", " ")}</span>
-                  </>
-                )}
-              </div>
-              {seg.turns === null ? (
-                <p className="text-[15px] text-muted">Still processing at ElevenLabs — this refreshes on its own.</p>
-              ) : seg.turns.length === 0 ? (
-                <p className="text-[15px] text-muted">No speech was recorded in this session.</p>
-              ) : (
-                <ol className="flex flex-col gap-4">
-                  {seg.turns.map((t, i) => (
-                    <li key={i} className="grid grid-cols-[72px_1fr] gap-4">
-                      <span className={cn("pt-0.5 font-mono text-[11px] uppercase tracking-[0.1em]", t.role === "agent" ? "text-accent" : "text-muted")}>
-                        {t.role === "agent" ? "Moderator" : "You"}
-                      </span>
-                      <p className="text-[16px] leading-7 text-text">{t.message}</p>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </section>
+            <Segment key={seg.conversationId} segment={seg} />
           ))}
         </div>
       </div>
@@ -122,8 +80,77 @@ export function TranscriptView() {
   );
 }
 
+/** The summary line, the resume button, and the download buttons. */
+function Actions({ data, turnCount, onResume }: { data: TranscriptResponse; turnCount: number; onResume: () => void }) {
+  const sessions = data.segments.length;
+  return (
+    <>
+      <p className="mb-8 font-mono text-[12px] text-muted">
+        {data.segment ? SEGMENT_LABEL[data.segment] : ""} · {sessions} session{sessions === 1 ? "" : "s"} · {turnCount}{" "}
+        turns
+      </p>
+      {data.interviewStatus !== "completed" && (
+        <div className="mb-8">
+          <Button onClick={onResume}>Resume interview</Button>
+        </div>
+      )}
+      <div className="mb-8 flex flex-wrap items-center gap-2">
+        <Button variant="quiet" onClick={() => download(data, "txt")} disabled={turnCount === 0}>
+          Download .txt
+        </Button>
+        <Button variant="quiet" onClick={() => download(data, "json")} disabled={turnCount === 0}>
+          Download .json
+        </Button>
+      </div>
+    </>
+  );
+}
+
+/** One conversation segment: a header line and its turns. */
+function Segment({ segment }: { segment: TranscriptSegment }) {
+  return (
+    <section className="mb-10">
+      <div className="mb-4 flex items-center gap-3 border-b border-line pb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-muted">
+        <span>Session {segment.attemptNo}</span>
+        <span className="text-faint">·</span>
+        <span>{new Date(segment.startedAt).toLocaleString()}</span>
+        {segment.endReason && (
+          <>
+            <span className="text-faint">·</span>
+            <span>{END_REASON_LABEL[segment.endReason]}</span>
+          </>
+        )}
+      </div>
+      <Turns turns={segment.turns} />
+    </section>
+  );
+}
+
+/** The turns of one segment, or a status message when there are none. */
+function Turns({ turns }: { turns: TranscriptTurn[] | null }) {
+  if (turns === null) {
+    return <p className="text-[15px] text-muted">Still processing at ElevenLabs — this refreshes on its own.</p>;
+  }
+  if (turns.length === 0) {
+    return <p className="text-[15px] text-muted">No speech was recorded in this session.</p>;
+  }
+  return (
+    <ol className="flex flex-col gap-4">
+      {turns.map((t, i) => (
+        <li key={i} className="grid grid-cols-[72px_1fr] gap-4">
+          <span className={cn("pt-0.5 font-mono text-[11px] uppercase tracking-[0.1em]", t.role === "agent" ? "text-accent" : "text-muted")}>
+            {t.role === "agent" ? "Moderator" : "You"}
+          </span>
+          <p className="text-[16px] leading-7 text-text">{t.message}</p>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 type VisitorTranscript = { redirect: string; data?: never } | { redirect?: never; data: TranscriptResponse };
 
+/** Loads the transcript for this browser's respondent. Returns a redirect when the page is not theirs to see. */
 async function loadTranscriptForVisitor(): Promise<VisitorTranscript> {
   const state = await loadOrCreateRespondent();
   if (state.surveyStatus !== "qualified") return { redirect: "/" };
@@ -131,6 +158,7 @@ async function loadTranscriptForVisitor(): Promise<VisitorTranscript> {
   return { data: await fetchTranscript(state.id) };
 }
 
+/** Starts a browser download of the transcript as text or JSON. */
 function download(data: TranscriptResponse, format: "txt" | "json") {
   const body =
     format === "json"

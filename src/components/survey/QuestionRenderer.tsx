@@ -10,7 +10,7 @@ interface QuestionRendererProps {
   onAnswer: (value: string | string[]) => void;
 }
 
-/** Picks the input for a question's type. The screen around it is shared. */
+/** Selects the input for the question type. The screen around it is shared. */
 export function QuestionRenderer({ question, value, onAnswer }: QuestionRendererProps) {
   switch (question.type) {
     case "single":

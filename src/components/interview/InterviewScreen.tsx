@@ -10,14 +10,14 @@ import { Notice } from "@/components/ui/Notice";
 
 export type InterviewPhase =
   | "loading"
-  | "ready" // never started
-  | "resume" // started before, progress saved
+  | "ready" // Not started.
+  | "resume" // Started before. Progress is saved.
   | "mic_denied"
   | "connecting"
   | "live"
-  | "interrupted" // connection dropped
-  | "paused" // respondent chose to stop for now
-  | "incomplete"; // call ended but required questions remain
+  | "interrupted" // The connection was lost.
+  | "paused" // The respondent stopped for now.
+  | "incomplete"; // The call ended, but required questions remain.
 
 interface GuideItem {
   id: string;
@@ -38,9 +38,9 @@ interface InterviewScreenProps {
 }
 
 /**
- * One screen, several states. The checklist is the "clear indication of
- * progress" — it is also literally the completion gate: Finish enables only
- * when every item is marked, and the server checks the same set.
+ * One screen with several states. The checklist shows the progress. It is
+ * also the completion gate. The Finish button is enabled only when each
+ * item is marked. The server checks the same set.
  */
 export function InterviewScreen(props: InterviewScreenProps) {
   const quiet = useReducedMotion();
@@ -64,7 +64,7 @@ export function InterviewScreen(props: InterviewScreenProps) {
   );
 }
 
-/* ---------- before / between calls ---------- */
+/* ---------- Before a call, or between calls ---------- */
 
 function Intro({ phase, guide, answered, error, onBegin }: InterviewScreenProps) {
   const done = answered.filter((id) => guide.some((q) => q.id === id)).length;
@@ -145,7 +145,7 @@ function introCopy(phase: InterviewPhase, done: number, total: number, nextTopic
   }
 }
 
-/* ---------- during a call ---------- */
+/* ---------- During a call ---------- */
 
 function Call({ phase, guide, answered, complete, isSpeaking, onPause, onFinish }: InterviewScreenProps) {
   const current = guide.find((q) => !answered.includes(q.id));

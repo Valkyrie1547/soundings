@@ -2,12 +2,12 @@ import { cn } from "@/lib/cn";
 
 interface KeyHintProps {
   children: React.ReactNode;
-  /** Filled = the key's action is the selected one. */
+  /** True when the key's option is selected. The badge is then filled. */
   active?: boolean;
   className?: string;
 }
 
-/** A keyboard key, drawn as a small badge. Always visible, never a tooltip. */
+/** A keyboard key, drawn as a small badge. It is always visible. It is not a tooltip. */
 export function KeyHint({ children, active, className }: KeyHintProps) {
   return (
     <kbd

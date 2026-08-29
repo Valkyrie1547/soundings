@@ -12,10 +12,11 @@ const SEGMENT_LABEL: Record<Outcome, string> = {
 };
 
 /**
- * The guide a respondent hears. In short mode (dev only) the interview is
- * three questions, so a full run costs ~2 platform minutes instead of 12.
- * Everything downstream — required set, progress, completion — derives
- * from this one function, so short mode can't disagree with itself.
+ * The guide a respondent hears. In short mode (development only) the
+ * interview has three questions, so one full run uses about 2 platform
+ * minutes instead of 12. The required set, the progress, and the completion
+ * check all come from this one function. Short mode cannot disagree with
+ * itself.
  */
 export function guideFor(segment: Outcome): InterviewQuestion[] {
   const full = interviewGuideFor(segment);
@@ -34,8 +35,9 @@ export function isComplete(segment: Outcome, answered: Set<string>): boolean {
 }
 
 /**
- * Everything the agent needs to run — or resume — this respondent's
- * interview, built from the database. The prompt itself never changes.
+ * All the data the agent needs to run or resume this respondent's
+ * interview. The server builds it from the database. The prompt does not
+ * change.
  */
 export function buildDynamicVariables(
   respondentId: string,

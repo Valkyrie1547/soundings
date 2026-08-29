@@ -21,8 +21,9 @@ export async function loadProgress(respondentId: string): Promise<ProgressEntry[
 }
 
 /**
- * Open a new conversation segment: a session row, a signed URL, and the
- * dynamic variables that tell the agent where this respondent already is.
+ * Opens a new conversation segment. It makes a session row, gets a signed
+ * URL, and builds the dynamic variables that tell the agent where this
+ * respondent is.
  */
 export async function startInterviewSession(respondentId: string, segment: Outcome) {
   const progress = await loadProgress(respondentId);
@@ -55,7 +56,7 @@ export async function startInterviewSession(respondentId: string, segment: Outco
   };
 }
 
-/** Idempotent: marking the same question twice is a no-op with a fresher summary. */
+/** Idempotent. A second mark for the same question only updates the summary. */
 export async function markAnswered(respondentId: string, questionId: string, summary: string | null) {
   await db()
     .insert(interviewProgress)
@@ -68,8 +69,8 @@ export async function markAnswered(respondentId: string, questionId: string, sum
 }
 
 /**
- * Close a segment. Completion is decided here, from the progress table,
- * never from what the client claims.
+ * Closes a segment. The server decides completion here, from the progress
+ * table. It does not trust what the client reports.
  */
 export async function endInterviewSession(
   respondentId: string,
@@ -95,10 +96,11 @@ export async function endInterviewSession(
 }
 
 /**
- * The full interview transcript: every segment's turns, in order. Segments
- * whose transcript hasn't been stored yet are fetched from ElevenLabs on
- * demand — no webhook or dashboard config needed, and safe to call early
- * (a segment still processing is simply retried next time).
+ * The full interview transcript: the turns of every segment, in order.
+ * When a segment has no stored transcript, this function gets it from
+ * ElevenLabs. No webhook or dashboard configuration is necessary. It is safe
+ * to call this early. A segment that is not processed yet is tried again on
+ * the next call.
  */
 export async function loadTranscript(respondentId: string) {
   const pending = await db()
@@ -129,7 +131,7 @@ export async function loadTranscript(respondentId: string) {
         })
         .onConflictDoNothing();
     } catch {
-      // Leave it for the next request; the UI shows "still processing".
+      // Try again on the next request. The UI shows "still processing".
     }
   }
 
@@ -154,7 +156,7 @@ export async function loadTranscript(respondentId: string) {
       startedAt: r.startedAt.toISOString(),
       endReason: r.endReason,
       conversationId: r.conversationId!,
-      turns: r.turns ?? null, // null = still processing at ElevenLabs
+      turns: r.turns ?? null, // null means ElevenLabs has not processed it yet.
       summary: r.summary,
     }));
 }

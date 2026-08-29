@@ -2,14 +2,15 @@ import type { ElevenLabs } from "@elevenlabs/elevenlabs-js";
 import { study } from "@/config/study";
 
 /**
- * The ElevenLabs agent, as code. `scripts/setup-agent.ts` pushes this to
- * the platform; nothing about the agent lives only in the dashboard.
+ * The ElevenLabs agent, as code. `scripts/setup-agent.ts` sends this
+ * configuration to the platform. No part of the agent exists only in the
+ * dashboard.
  *
- * The prompt is deliberately generic: the question guide, the respondent's
- * segment, and any resume context arrive as dynamic variables built by our
- * server from the database at session start. That is what makes resumption
- * work without any native support — a resumed interview is just a new
- * session whose variables say "you've already covered q2–q5".
+ * The prompt is generic. The question guide, the respondent's segment, and
+ * the resume context come in as dynamic variables. The server builds them
+ * from the database when a session starts. This is how resumption works
+ * without native support: a resumed interview is a new session whose
+ * variables say "q2 to q5 are answered".
  */
 
 export const CLIENT_TOOLS = {
@@ -63,7 +64,7 @@ Spoken English, conversational, unhurried. Short sentences. No lists, no heading
 
 const questionIds = [...new Set(study.interview.filter((q) => q.required).map((q) => q.id))];
 
-/** Workspace tool definitions, managed by name so re-runs update rather than duplicate. */
+/** The workspace tool definitions. The setup script finds tools by name, so a second run updates them and does not make copies. */
 export const TOOL_CONFIGS: ElevenLabs.ToolRequestModelToolConfig.Client[] = [
   {
     type: "client",
@@ -127,7 +128,7 @@ export function buildAgentConfig(toolIds: string[]): ElevenLabs.conversationalAi
         },
       },
       conversation: {
-        // The brief's interview runs 10–15 minutes; the platform default (600s) would cut it off.
+        // The interview takes 10 to 15 minutes. The platform default (600 s) would stop it too early.
         maxDurationSeconds: 1800,
       },
     },

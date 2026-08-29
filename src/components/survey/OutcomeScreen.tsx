@@ -9,7 +9,7 @@ import { KeyHint } from "@/components/ui/KeyHint";
 interface OutcomeScreenProps {
   outcome: "qualified" | "screened_out";
   direction: Direction;
-  /** Qualified only: hands off to the interview. */
+  /** For the qualified outcome only. Goes to the interview. */
   onContinue?: () => void;
 }
 
@@ -31,8 +31,9 @@ const copy = {
 } as const;
 
 /**
- * The end of screening, in the same frame as the questions. Screened-out
- * is terminal: there is no retake, and revisiting shows this screen again.
+ * The end of the screening, in the same frame as the questions. The
+ * screened-out state is terminal. There is no retake. A new visit shows
+ * this screen again.
  */
 export function OutcomeScreen({ outcome, direction, onContinue }: OutcomeScreenProps) {
   const quiet = useReducedMotion();

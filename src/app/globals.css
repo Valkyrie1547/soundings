@@ -2,9 +2,9 @@
 
 /*
   Design tokens.
-  Neutrals live here. The accent is study-scoped: StudyShell injects
-  --accent / --on-accent from config/study.ts so swapping the study
-  swaps the brand color without touching this file.
+  The neutral colors are here. The accent belongs to the study. StudyShell
+  sets --accent and --on-accent from config/study.ts. A different study gets
+  a different brand color without a change to this file.
 
   Light = "Fog"    (cool light ground, ink text)
   Dark  = "Fathom" (cold blue-black ground, brass accent)
@@ -19,7 +19,7 @@
   --muted: #67717b;
   --faint: #98a1a9;
 
-  /* fallbacks; overridden per study by StudyShell */
+  /* Fallback values. StudyShell replaces them for each study. */
   --accent: #1f4e79;
   --on-accent: #f8f9f9;
 
@@ -102,7 +102,7 @@ body {
   transition: background-color var(--dur-screen) var(--ease), color var(--dur-screen) var(--ease);
 }
 
-/* Keyboard focus: one ring, everywhere. */
+/* Keyboard focus: one ring, in all places. */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -114,10 +114,10 @@ body {
 }
 
 /*
-  Study-scoped accent. StudyShell sets --accent-light / --accent-dark
-  (and the on-accent pair) inline from config; this picks the right one
-  for the active theme. Both themes are defined here so the un-stamped
-  "system" state resolves correctly.
+  The study accent. StudyShell sets --accent-light and --accent-dark (and
+  the on-accent pair) inline from the configuration. This block selects the
+  correct one for the active theme. Both themes are defined here, so the
+  "system" state with no data-theme value resolves correctly.
 */
 .study-scope {
   --accent: var(--accent-light);

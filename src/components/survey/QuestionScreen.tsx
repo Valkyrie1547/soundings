@@ -14,16 +14,16 @@ interface QuestionScreenProps {
   index: number;
   value?: string | string[];
   direction: Direction;
-  /** A problem worth telling the respondent about, e.g. a failed save. */
+  /** A problem to show the respondent, for example a failed save. */
   notice?: string | null;
   onAnswer: (value: string | string[]) => void;
   onBack?: () => void;
 }
 
 /**
- * One question, full screen. Must be rendered inside an <AnimatePresence
- * custom={direction} mode="wait"> so the outgoing question exits in the
- * same direction the incoming one enters.
+ * One question, full screen. Render it inside an <AnimatePresence
+ * custom={direction} mode="wait">. Then the question that leaves moves in
+ * the same direction as the question that enters.
  */
 export function QuestionScreen({ question, index, value, direction, notice, onAnswer, onBack }: QuestionScreenProps) {
   const quiet = useReducedMotion();

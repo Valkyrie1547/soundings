@@ -1,6 +1,6 @@
 import type { Transition, Variants } from "motion/react";
 
-/** All timing lives here so the walkthrough has one file to point at. */
+/** All durations are in this file. In seconds. */
 export const durations = {
   micro: 0.16,
   confirm: 0.22,
@@ -14,9 +14,10 @@ export const screenTransition: Transition = { duration: durations.screen, ease }
 export type Direction = 1 | -1;
 
 /**
- * Directional question swap. Forward: the next question rises from below.
- * Back: it settles from above. `custom` carries the direction so the
- * exiting screen leaves the way the entering one arrives.
+ * The question swap, with a direction. Forward: the next question comes up
+ * from below. Back: it comes down from above. The `custom` value carries
+ * the direction. The screen that leaves moves the same way as the screen
+ * that enters.
  */
 export const screenVariants: Variants = {
   enter: (dir: Direction) => ({ opacity: 0, y: 24 * dir }),
@@ -24,7 +25,7 @@ export const screenVariants: Variants = {
   exit: (dir: Direction) => ({ opacity: 0, y: -24 * dir }),
 };
 
-/** Reduced motion: crossfade only. */
+/** For reduced motion: a crossfade only. */
 export const screenVariantsQuiet: Variants = {
   enter: { opacity: 0 },
   center: { opacity: 1 },

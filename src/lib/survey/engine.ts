@@ -1,6 +1,6 @@
 import type { Option, Outcome, Question, StudyConfig } from "@/config/study";
 
-/** Answers keyed by question id. Multi-select questions store an array. */
+/** The answers, keyed by question id. A multi-select question stores an array. */
 export type Answers = Record<string, string | string[]>;
 
 export type SurveyState =
@@ -9,9 +9,9 @@ export type SurveyState =
   | { status: "qualified"; outcome: Outcome };
 
 /**
- * Pure survey engine. Given the config and the answers so far, says where
- * the respondent is. Because it is a pure function of stored answers, the
- * same call resolves a fresh visit, a resume, and a screen-out re-entry.
+ * The survey engine. It is a pure function. Given the configuration and the
+ * stored answers, it returns where the respondent is. The same call resolves
+ * a first visit, a resume, and a return after a screen-out.
  */
 export function resolve(config: StudyConfig, answers: Answers): SurveyState {
   for (let index = 0; index < config.screening.length; index++) {
@@ -36,7 +36,7 @@ type Verdict =
   | { kind: "terminate" }
   | { kind: "qualify"; outcome: Outcome };
 
-/** Applies one question's branching to its answer. */
+/** Applies the branch rules of one question to its answer. */
 export function judge(
   question: Question,
   answer: string | string[],

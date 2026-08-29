@@ -1,6 +1,6 @@
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
-/** Server-only. The API key never reaches the browser; it hands out signed URLs instead. */
+/** Server only. The API key does not go to the browser. The server gives the browser signed URLs. */
 let cached: ElevenLabsClient | undefined;
 
 export function elevenlabs() {

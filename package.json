@@ -10,7 +10,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
-    "agent:setup": "node --env-file=.env.local --import tsx scripts/setup-agent.ts"
+    "agent:setup": "node --env-file=.env.local --import tsx scripts/setup-agent.ts",
+    "lint:complexity": "eslint --rule \"complexity: [warn, 5]\" src scripts"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.65.0",

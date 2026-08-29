@@ -6,18 +6,18 @@ import { KeyHint } from "./KeyHint";
 
 interface OptionRowProps {
   label: string;
-  /** 1-based key shown in the badge and bound on the keyboard. */
+  /** The 1-based key. It shows in the badge and is bound on the keyboard. */
   hotkey: number;
   selected: boolean;
-  /** Briefly true after a choice, before the screen advances. */
+  /** True for a short time after a choice, before the screen advances. */
   confirming?: boolean;
   multi?: boolean;
   onSelect: () => void;
 }
 
 /**
- * One answer choice. Renders as a real button so Enter/Space work natively;
- * the parent hook handles digits and arrow-key focus.
+ * One answer option. It is a real button, so Enter and Space work natively.
+ * The parent hook handles digit keys and arrow-key focus.
  */
 export const OptionRow = forwardRef<HTMLButtonElement, OptionRowProps>(function OptionRow(
   { label, hotkey, selected, confirming, multi, onSelect },

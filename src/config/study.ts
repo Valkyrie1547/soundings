@@ -1,13 +1,12 @@
 /**
- * Study configuration — the single source of truth for one study.
+ * Study configuration. This file is the single source of truth for one study.
  *
- * Everything respondent-facing that is specific to *this* study lives here:
- * the name, the accent colour, the screening questions and their branching,
- * and (later) the interview guide. Swap this file, swap the study.
+ * All respondent-facing content that is specific to this study is here:
+ * the name, the accent color, the screening questions with their branch
+ * rules, and the interview guide. To change the study, change this file.
  *
- * Deliberately sponsor-blind: nothing here names the sponsor brand in
- * respondent-facing copy. Brand names only appear where the respondent is
- * asked to self-report them.
+ * The configuration is sponsor-blind. No respondent-facing text names the
+ * sponsor brand. Brand names only occur where the respondent reports them.
  */
 
 export type Outcome = "bmw_customer" | "potential_bmw_customer";
@@ -34,7 +33,7 @@ export interface SingleSelectQuestion extends BaseQuestion {
 
 export interface MultiSelectQuestion extends BaseQuestion {
   type: "multi";
-  /** Shown as the eyebrow, e.g. "Select all that apply". */
+  /** Text for the eyebrow label, for example "Select all that apply". */
   hint?: string;
 }
 
@@ -43,33 +42,33 @@ export type Question = SingleSelectQuestion | MultiSelectQuestion;
 /** One item in the interview guide. */
 export interface InterviewQuestion {
   id: string;
-  /** Which respondents hear it. */
+  /** The respondents that hear this question. */
   audience: "all" | Outcome;
-  /** Counted toward completion. The readiness check (q1) is not. */
+  /** True when the question counts for completion. The readiness check (q1) does not count. */
   required: boolean;
-  /** The moderator's wording, as given in the study brief. */
+  /** The words the moderator speaks, as given in the study brief. */
   text: string;
-  /** Short label used in progress UI and resume acknowledgements. */
+  /** A short label for the progress list and for the resume greeting. */
   topic: string;
 }
 
 export interface StudyConfig {
-  /** Product name shown in the header. */
+  /** The product name. It shows in the header. */
   name: string;
-  /** Respondent-facing study title. */
+  /** The study title that respondents see. */
   title: string;
   theme: {
     accent: { light: string; dark: string };
     onAccent: { light: string; dark: string };
   };
   screening: Question[];
-  /** Ordered interview guide; filtered by segment at runtime. */
+  /** The interview guide in order. The engine filters it by segment at runtime. */
   interview: InterviewQuestion[];
   /**
-   * When a multi-select answer mixes qualifying and terminating brands,
-   * qualification wins, and the first outcome listed here wins over later
-   * ones. Documented assumption: a respondent who owns a BMW and a Toyota
-   * is still a BMW owner.
+   * Precedence for a multi-select answer that has both qualify and terminate
+   * options. A qualify option wins. When more than one outcome qualifies,
+   * the first outcome in this list wins. Assumption: a respondent who owns a
+   * BMW and a Toyota is a BMW owner.
    */
   outcomePrecedence: Outcome[];
 }
@@ -166,7 +165,7 @@ export const study: StudyConfig = {
   ],
 };
 
-/** The guide one segment actually hears, in order. */
+/** The guide that one segment hears, in order. */
 export function interviewGuideFor(segment: Outcome): InterviewQuestion[] {
   return study.interview.filter((q) => q.audience === "all" || q.audience === segment);
 }

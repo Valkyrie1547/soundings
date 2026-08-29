@@ -10,8 +10,9 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
- * The respondent row is the single source of truth for where someone is in
- * the journey. Every page load resolves respondent id → this row → screen.
+ * The respondent row is the single source of truth for where a person is in
+ * the journey. Each page load goes from respondent id, to this row, to the
+ * screen.
  */
 export const segmentEnum = pgEnum("segment", ["bmw_customer", "potential_bmw_customer"]);
 export const surveyStatusEnum = pgEnum("survey_status", ["in_progress", "screened_out", "qualified"]);
@@ -25,7 +26,7 @@ export const respondents = pgTable("respondents", {
   interviewStatus: interviewStatusEnum("interview_status").notNull().default("not_started"),
 });
 
-/** One row per answered question; the unique key makes re-answering an upsert. */
+/** One row for each answered question. The primary key makes a new answer an update. */
 export const surveyAnswers = pgTable(
   "survey_answers",
   {
@@ -39,7 +40,7 @@ export const surveyAnswers = pgTable(
   (t) => [primaryKey({ columns: [t.respondentId, t.questionId] })],
 );
 
-/** One row per (re)connection. N rows = one interview in N segments. */
+/** One row for each connection. N rows make one interview in N segments. */
 export const interviewSessions = pgTable("interview_sessions", {
   id: uuid("id").primaryKey().defaultRandom(),
   respondentId: uuid("respondent_id")
@@ -52,7 +53,7 @@ export const interviewSessions = pgTable("interview_sessions", {
   endReason: text("end_reason").$type<"completed" | "dropped" | "user_ended">(),
 });
 
-/** Set semantics: a question is answered once the agent marks it, ever. */
+/** A set. A question is answered when the agent marks it once. */
 export const interviewProgress = pgTable(
   "interview_progress",
   {
@@ -72,7 +73,7 @@ export interface TranscriptTurn {
   timeInCallSecs: number;
 }
 
-/** One row per conversation segment; the full interview is the ordered set. */
+/** One row for each conversation segment. The full interview is the ordered set of rows. */
 export const transcripts = pgTable("transcripts", {
   conversationId: text("conversation_id").primaryKey(),
   respondentId: uuid("respondent_id")

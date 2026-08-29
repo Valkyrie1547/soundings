@@ -2,7 +2,7 @@ import { study } from "@/config/study";
 import { saveAnswer } from "@/lib/survey/persist";
 import { isUuid } from "@/lib/validate";
 
-/** Save one answer. Idempotent: re-sending the same question overwrites. */
+/** Saves one answer. Idempotent: a second answer for the same question replaces the first. */
 export async function PUT(req: Request, ctx: RouteContext<"/api/respondents/[id]/answers">) {
   const { id } = await ctx.params;
   if (!isUuid(id)) return Response.json({ error: "Invalid respondent id" }, { status: 400 });

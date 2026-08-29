@@ -3,8 +3,8 @@ import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "./schema";
 
 /**
- * HTTP driver: each query is one fetch, which is the right shape for
- * serverless route handlers doing short request/response work.
+ * The HTTP driver. Each query is one fetch. This is the correct shape for
+ * serverless route handlers that do short request and response work.
  */
 function connect() {
   const url = process.env.DATABASE_URL;

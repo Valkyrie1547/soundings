@@ -1,16 +1,17 @@
 /**
- * Create or update the ElevenLabs agent from src/lib/interview/agent-config.ts.
+ * Creates or updates the ElevenLabs agent from src/lib/interview/agent-config.ts.
  *
  *   npm run agent:setup      (node --env-file=.env.local --import tsx scripts/setup-agent.ts)
  *
- * Tools are matched by name and updated in place (strays with the same name
- * are removed). With ELEVENLABS_AGENT_ID unset, a new agent is created and
- * its id printed; with it set, that agent is updated. Safe to re-run.
+ * The script finds tools by name and updates them in place. It removes
+ * extra tools that have the same name. When ELEVENLABS_AGENT_ID is not set,
+ * the script creates a new agent and prints its id. When it is set, the
+ * script updates that agent. It is safe to run the script again.
  */
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import { buildAgentConfig, TOOL_CONFIGS } from "../src/lib/interview/agent-config";
 
-/** One workspace tool per name: update the first match, report the rest as strays. */
+/** One workspace tool for each name. Updates the first match and returns the other matches as strays. */
 async function syncTools(client: ElevenLabsClient) {
   const { tools } = await client.conversationalAi.tools.list();
   const ids: string[] = [];
@@ -33,7 +34,7 @@ async function syncTools(client: ElevenLabsClient) {
   return { ids, strays };
 }
 
-/** Strays can only be deleted once no agent references them. */
+/** Deletes stray tools. This is only possible when no agent refers to them. */
 async function removeStrays(client: ElevenLabsClient, strays: string[]) {
   for (const id of strays) {
     await client.conversationalAi.tools.delete(id);

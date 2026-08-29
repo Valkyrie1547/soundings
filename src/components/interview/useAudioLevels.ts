@@ -3,9 +3,10 @@
 import { useEffect } from "react";
 
 /**
- * Drives the audio-reactive rail without touching React state: one rAF loop
- * writes --agent-level and --mic-level (0–1) to the document, and CSS does
- * the rest. Disabled under reduced motion, where the rail stays still.
+ * Drives the audio-reactive rail without React state. One animation-frame
+ * loop writes --agent-level and --mic-level (0 to 1) to the document. CSS
+ * does the rest. The loop is off under reduced motion. The rail then does
+ * not move.
  */
 export function useAudioLevels(
   active: boolean,
@@ -25,7 +26,7 @@ export function useAudioLevels(
     let agent = 0;
     let mic = 0;
     const tick = () => {
-      // Light smoothing so the weight breathes rather than flickers.
+      // Light smoothing. The weight moves slowly and does not flicker.
       agent = agent * 0.7 + clamp(getOutput()) * 0.3;
       mic = mic * 0.7 + clamp(getInput()) * 0.3;
       root.style.setProperty("--agent-level", agent.toFixed(3));

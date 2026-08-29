@@ -9,15 +9,16 @@ import { useQuestionKeys } from "./useQuestionKeys";
 
 interface MultiSelectProps {
   question: MultiSelectQuestion;
-  /** Pre-populated on resume or when stepping back. */
+  /** The stored value, on resume or after a step back. */
   value?: string[];
   onAnswer: (optionIds: string[]) => void;
 }
 
 /**
- * Toggle any number, then continue explicitly — a multi-select can't know
- * when you're done, so it never auto-advances. Order of selection is kept,
- * which the engine ignores but the data model preserves.
+ * The user can toggle any number of options, then must press Continue. A
+ * multi-select cannot know when the user is done, so it does not advance
+ * on its own. The order of selection is kept. The engine ignores the order,
+ * but the data model keeps it.
  */
 export function MultiSelect({ question, value, onAnswer }: MultiSelectProps) {
   const [chosen, setChosen] = useState<string[]>(value ?? []);
