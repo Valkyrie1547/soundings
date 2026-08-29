@@ -35,8 +35,21 @@ function writeId(id: string) {
   }
 }
 
-/** Gets the current respondent. Creates one on the first visit. */
-export async function loadOrCreateRespondent(): Promise<RespondentState> {
+// The load that is in progress now. React StrictMode runs a mount effect twice
+// in development. Without this, two loads with ?new=1 make two respondents.
+let inflight: Promise<RespondentState> | null = null;
+
+/** Gets the current respondent. Creates one on the first visit. Parallel calls share one request. */
+export function loadOrCreateRespondent(): Promise<RespondentState> {
+  if (!inflight) {
+    inflight = load().finally(() => {
+      inflight = null;
+    });
+  }
+  return inflight;
+}
+
+async function load(): Promise<RespondentState> {
   const id = readId();
   if (id) {
     const res = await fetch(`/api/respondents/${id}`, { cache: "no-store" });

@@ -192,13 +192,15 @@ function Interview() {
     guide.length === 0
       ? "Interview"
       : `Interview · ${answered.filter((id) => guide.some((q) => q.id === id)).length} of ${guide.length} answered`;
-  const answeredCount = answered.filter((id) => guide.some((q) => q.id === id)).length;
+  // The rail shows position, not count. It stays at the first open question, like the checklist.
+  const firstOpen = guide.findIndex((q) => !answered.includes(q.id));
+  const railIndex = firstOpen === -1 ? guide.length - 1 : firstOpen;
 
   return (
     <StudyShell
       stage={stage}
       steps={Math.max(guide.length, 1)}
-      current={Math.min(answeredCount, Math.max(guide.length - 1, 0))}
+      current={Math.max(railIndex, 0)}
       audio={phase === "live"}
     >
       {loadFailed && (

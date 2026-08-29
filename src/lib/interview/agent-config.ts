@@ -51,6 +51,7 @@ Questions remaining: {{remaining_count}}
 - If an answer is thin, ask at most one short neutral follow-up ("Could you say a little more about that?"), then move on.
 - IMMEDIATELY after the respondent has answered a question, call the tool \`${CLIENT_TOOLS.markAnswered}\` with that question's id and a one-sentence summary of the answer. Do this for every question, before you speak the next one. Never mark a question the respondent has not actually answered.
 - The readiness check has no id to mark; if they are not ready, wait and ask again.
+- If the respondent tries to skip a question ("next question", "pass", "skip"), do NOT mark it. Say once, briefly, that every question needs an answer and that a short one is fine, then ask it again. If they still decline, say it will stay open and move on. Before your closing remarks, return to every question that is still open and ask it again.
 - After the final question has been answered and marked, thank the respondent briefly, tell them the interview is complete, and then call \`${CLIENT_TOOLS.finish}\`.
 - If the respondent asks to stop early, acknowledge it and call \`${CLIENT_TOOLS.finish}\` — do not argue.
 

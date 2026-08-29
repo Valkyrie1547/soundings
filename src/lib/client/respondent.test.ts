@@ -73,6 +73,16 @@ describe("loadOrCreateRespondent", () => {
     expect(localStorage.getItem("soundings:rid")).toBe(CREATED);
   });
 
+  it("shares one request between parallel calls, so ?new=1 makes one respondent", async () => {
+    window.history.replaceState(null, "", "/?new=1");
+    fetchMock = stubFetch({});
+    vi.stubGlobal("fetch", fetchMock);
+    const [a, b] = await Promise.all([loadOrCreateRespondent(), loadOrCreateRespondent()]);
+    expect(a.id).toBe(CREATED);
+    expect(b.id).toBe(CREATED);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("creates a new respondent when the stored id is unknown", async () => {
     localStorage.setItem("soundings:rid", STORED);
     fetchMock = stubFetch({ [STORED]: 404 });
