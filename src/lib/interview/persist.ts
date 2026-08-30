@@ -213,7 +213,11 @@ export async function loadTranscript(respondentId: string) {
     if (!s.conversationId) continue;
     try {
       const convo = await elevenlabs().conversationalAi.conversations.get(s.conversationId);
-      if (convo.status === "in-progress" || convo.status === "initiated") continue;
+      // Store only a finished conversation. The client asks for the transcript
+      // about one second after the call ends, when the status is "processing"
+      // and the transcript is still empty. A stored empty transcript would
+      // never be fetched again.
+      if (convo.status !== "done" && convo.status !== "failed") continue;
       const turns: TranscriptTurn[] = convo.transcript
         .filter((t) => t.message)
         .map((t) => ({
