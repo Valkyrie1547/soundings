@@ -3,7 +3,7 @@
 /*
   Design tokens.
   The neutral colors are here. The accent belongs to the study. StudyShell
-  sets --accent and --on-accent from config/study.ts. A different study gets
+  sets --accent and --on-accent from the study document. A different study gets
   a different brand color without a change to this file.
 
   Light = "Fog"    (cool light ground, ink text)

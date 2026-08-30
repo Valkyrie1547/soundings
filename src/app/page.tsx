@@ -1,5 +1,5 @@
-import { SurveyFlow } from "@/components/survey/SurveyFlow";
+import { redirectToDefaultStudy } from "@/lib/study/page";
 
-export default function Home() {
-  return <SurveyFlow />;
+export default async function Home({ searchParams }: PageProps<"/">) {
+  redirectToDefaultStudy("", await searchParams);
 }

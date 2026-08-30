@@ -1,0 +1,77 @@
+{
+  "id": "coffee-subscription",
+  "version": 1,
+  "name": "Soundings",
+  "title": "Coffee habits study",
+  "theme": {
+    "accent": { "light": "#7a4a22", "dark": "#dba36a" },
+    "onAccent": { "light": "#faf7f3", "dark": "#160f0a" }
+  },
+  "copy": {
+    "qualified": "Next is a short voice interview about how you buy and drink coffee, around 5 to 10 minutes. You'll need a microphone and a quiet spot. If you leave partway through, you can pick up where you stopped.",
+    "screenedOut": "This study is looking for regular coffee drinkers, and your answers put you outside that group. Your responses have been recorded, and there's nothing more to do.",
+    "interviewHeading": "A short conversation about your coffee.",
+    "interviewBody": "A moderator will ask {total} questions about how you buy and drink coffee — about 5 to 10 minutes. Find a quiet spot; you can pause and come back at any time without losing your place."
+  },
+  "segments": [
+    { "id": "subscriber", "label": "Has a coffee subscription", "transcriptLabel": "Subscriber" },
+    { "id": "non_subscriber", "label": "Buys coffee without a subscription", "transcriptLabel": "Non-subscriber" }
+  ],
+  "outcomePrecedence": ["subscriber", "non_subscriber"],
+  "screening": [
+    {
+      "id": "age",
+      "type": "single",
+      "prompt": "How old are you?",
+      "options": [
+        { "id": "under_18", "label": "Under 18", "effect": { "kind": "terminate" } },
+        { "id": "18_24", "label": "18–24" },
+        { "id": "25_34", "label": "25–34" },
+        { "id": "35_44", "label": "35–44" },
+        { "id": "45_plus", "label": "45+" }
+      ]
+    },
+    {
+      "id": "frequency",
+      "type": "single",
+      "prompt": "How often do you drink coffee?",
+      "options": [
+        { "id": "daily", "label": "Every day" },
+        { "id": "weekly", "label": "A few times a week" },
+        { "id": "rarely", "label": "Rarely or never", "effect": { "kind": "terminate" } }
+      ]
+    },
+    {
+      "id": "sources",
+      "type": "multi",
+      "prompt": "Where do you usually get your coffee?",
+      "hint": "Select all that apply",
+      "options": [
+        { "id": "subscription", "label": "A subscription delivery", "effect": { "kind": "qualify", "outcome": "subscriber" } },
+        { "id": "supermarket", "label": "Supermarket or grocery store", "effect": { "kind": "qualify", "outcome": "non_subscriber" } },
+        { "id": "roaster", "label": "A local roaster or café", "effect": { "kind": "qualify", "outcome": "non_subscriber" } },
+        { "id": "office", "label": "Only at work", "effect": { "kind": "terminate" } }
+      ]
+    }
+  ],
+  "interview": [
+    {
+      "id": "q1",
+      "audience": "all",
+      "required": false,
+      "topic": "getting started",
+      "text": "Thank you for taking part. I'm going to ask you a few questions about how you buy and drink coffee. This should take about five to ten minutes. Are you ready to begin?"
+    },
+    { "id": "q2", "audience": "all", "required": true, "topic": "your daily coffee routine", "text": "Tell me about your coffee routine on a typical day.", "anchor": "typical day" },
+    { "id": "q3", "audience": "all", "required": true, "topic": "what matters when you choose coffee", "text": "When you choose which coffee to buy, what matters most to you?" },
+    { "id": "q4", "audience": "all", "required": true, "topic": "your satisfaction rating", "text": "On a scale of 1 to 10, how satisfied are you with the coffee you drink at home?", "anchor": "scale of 1 to 10" },
+
+    { "id": "q5", "audience": "subscriber", "required": true, "topic": "why you subscribed", "text": "What made you sign up for a coffee subscription in the first place?" },
+    { "id": "q6", "audience": "subscriber", "required": true, "topic": "what would make you cancel", "text": "What, if anything, would make you cancel your subscription?" },
+
+    { "id": "q5", "audience": "non_subscriber", "required": true, "topic": "whether you've considered a subscription", "text": "Have you ever considered a coffee subscription? Why or why not?" },
+    { "id": "q6", "audience": "non_subscriber", "required": true, "topic": "what would make you try one", "text": "What would a subscription need to offer for you to try it?" },
+
+    { "id": "q7", "audience": "all", "required": true, "topic": "anything else about your coffee habits", "text": "Is there anything else you'd like to share about your coffee habits?", "anchor": "anything else you'd like to share" }
+  ]
+}

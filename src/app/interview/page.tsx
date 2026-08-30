@@ -1,5 +1,5 @@
-import { InterviewFlow } from "@/components/interview/InterviewFlow";
+import { redirectToDefaultStudy } from "@/lib/study/page";
 
-export default function InterviewPage() {
-  return <InterviewFlow />;
+export default async function InterviewPage({ searchParams }: PageProps<"/interview">) {
+  redirectToDefaultStudy("/interview", await searchParams);
 }

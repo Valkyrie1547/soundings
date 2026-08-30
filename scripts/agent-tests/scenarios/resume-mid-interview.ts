@@ -1,6 +1,7 @@
-import { guideFor, type ProgressEntry } from "../../../src/lib/interview/session";
+import type { ProgressEntry } from "../../../src/lib/interview/session";
+import { guideFor } from "../../../src/lib/study";
 import { check, type Scenario } from "../harness";
-import { anyQuestion, BMW_OWNER, cooperative, INTRO, wording } from "./shared";
+import { anyQuestion, BMW_OWNER, cooperative, INTRO, wording, VEHICLE_STUDY } from "./shared";
 
 const SEGMENT = "bmw_customer";
 
@@ -11,10 +12,9 @@ const progress: ProgressEntry[] = [
   { questionId: "q5", summary: "They value the handling and the interior most.", source: "tool" },
 ];
 
-const Q5_TOPIC = guideFor(SEGMENT).find((q) => q.id === "q5")?.topic ?? "";
-
 /** A second session with q2 to q5 answered. The greeting names the q5 topic, and the agent goes straight to q6. */
 export const resumeMidInterview: Scenario = {
+  studyId: VEHICLE_STUDY,
   name: "resume-mid-interview",
   segment: SEGMENT,
   progress,
@@ -25,7 +25,8 @@ This is a second session. Earlier today you already answered a few questions. Wh
   newTurnsLimit: 32,
   criteria: [],
   passRate: 1,
-  assert(t) {
+  assert(t, study) {
+    const Q5_TOPIC = guideFor(study, SEGMENT).find((q) => q.id === "q5")?.topic ?? "";
     const first = t.firstAgentTurn();
     check(first.startsWith("Welcome back"), `first agent turn is "${first.slice(0, 60)}"`);
     check(first.includes(Q5_TOPIC), `first agent turn does not name the q5 topic "${Q5_TOPIC}"`);

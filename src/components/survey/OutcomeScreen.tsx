@@ -8,36 +8,28 @@ import { KeyHint } from "@/components/ui/KeyHint";
 
 interface OutcomeScreenProps {
   outcome: "qualified" | "screened_out";
+  /** The study's own body text for each outcome. */
+  copy: { qualified: string; screenedOut: string };
   direction: Direction;
   /** For the qualified outcome only. Goes to the interview. */
   onContinue?: () => void;
 }
 
-const copy = {
-  qualified: {
-    eyebrow: "You qualify",
-    heading: "Thanks — you're a match for this study.",
-    body:
-      "Next is a short voice interview about your ownership experience, around 10 to 15 minutes. You'll need a microphone and a quiet spot. If you leave partway through, you can pick up where you stopped.",
-    action: "Start the interview",
-  },
-  screened_out: {
-    eyebrow: "Screening complete",
-    heading: "Thanks for your time.",
-    body:
-      "This study is looking for a specific group of drivers, and your answers put you outside it. Your responses have been recorded, and there's nothing more to do.",
-    action: null,
-  },
-} as const;
+function copyFor(outcome: OutcomeScreenProps["outcome"], body: OutcomeScreenProps["copy"]) {
+  if (outcome === "qualified") {
+    return { eyebrow: "You qualify", heading: "Thanks — you're a match for this study.", body: body.qualified, action: "Start the interview" };
+  }
+  return { eyebrow: "Screening complete", heading: "Thanks for your time.", body: body.screenedOut, action: null };
+}
 
 /**
  * The end of the screening, in the same frame as the questions. The
  * screened-out state is terminal. There is no retake. A new visit shows
  * this screen again.
  */
-export function OutcomeScreen({ outcome, direction, onContinue }: OutcomeScreenProps) {
+export function OutcomeScreen({ outcome, copy, direction, onContinue }: OutcomeScreenProps) {
   const quiet = useReducedMotion();
-  const c = copy[outcome];
+  const c = copyFor(outcome, copy);
 
   return (
     <motion.section

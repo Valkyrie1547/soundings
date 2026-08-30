@@ -1,12 +1,13 @@
 import { CLIENT_TOOLS } from "../../../src/lib/interview/agent-config";
 import { STOP_RESPECTED } from "../criteria";
 import { check, checkCriterion, type Scenario } from "../harness";
-import { anyQuestion, BMW_OWNER, cooperative } from "./shared";
+import { anyQuestion, BMW_OWNER, cooperative, VEHICLE_STUDY } from "./shared";
 
 const SEGMENT = "bmw_customer";
 
 /** The respondent stops after q3. The agent finishes, asks nothing more, and does not argue. */
 export const stopEarly: Scenario = {
+  studyId: VEHICLE_STUDY,
   name: "stop-early",
   segment: SEGMENT,
   progress: [],

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Question } from "@/config/study";
+import type { Question } from "@/lib/study";
 import { MultiSelect } from "./MultiSelect";
 import { SingleSelect } from "./SingleSelect";
 

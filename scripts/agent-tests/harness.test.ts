@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { happyPath } from "./scenarios/happy-path";
 import { check, checkCriterion, requestFor, viewOf, type Analysis, type Turn } from "./harness";
+import { vehicleStudy } from "@/test/fixtures";
 
 function agent(message: string, marks: Array<[string, string]> = []): Turn {
   return {
@@ -111,12 +112,12 @@ describe("check helpers", () => {
 
 describe("requestFor", () => {
   it("builds the simulation body from the scenario", () => {
-    const body = requestFor(happyPath);
+    const body = requestFor(happyPath, vehicleStudy);
     const spec = body.simulationSpecification;
     expect(spec.simulatedUserConfig.prompt?.prompt).toBe(happyPath.persona);
     expect(spec.simulatedUserConfig.language).toBe("en");
     expect("firstMessage" in spec.simulatedUserConfig).toBe(false);
-    const spoken = requestFor({ ...happyPath, firstMessage: "Hello" });
+    const spoken = requestFor({ ...happyPath, firstMessage: "Hello" }, vehicleStudy);
     expect(spoken.simulationSpecification.simulatedUserConfig.firstMessage).toBe("Hello");
     expect(spec.toolMockConfig).toEqual({
       mark_question_answered: { defaultReturnValue: "recorded" },
@@ -139,13 +140,13 @@ describe("happy-path assertions", () => {
 
   it("passes a complete, neutral transcript", () => {
     const t = viewOf([...marks, finish("Done.")], ANALYSIS);
-    expect(() => happyPath.assert(t)).not.toThrow();
+    expect(() => happyPath.assert(t, vehicleStudy)).not.toThrow();
   });
 
   it("fails when a mark is missing or a bracketed id is spoken", () => {
     const t = viewOf([...marks.slice(0, 10), finish("Done.")], ANALYSIS);
-    expect(() => happyPath.assert(t)).toThrow(/expected q2/);
+    expect(() => happyPath.assert(t, vehicleStudy)).toThrow(/expected q2/);
     const spoken = viewOf([agent("[q2] How long?"), ...marks, finish("Done.")], ANALYSIS);
-    expect(() => happyPath.assert(spoken)).toThrow(/bracketed id/);
+    expect(() => happyPath.assert(spoken, vehicleStudy)).toThrow(/bracketed id/);
   });
 });

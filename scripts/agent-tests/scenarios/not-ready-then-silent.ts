@@ -1,7 +1,7 @@
 import { CLIENT_TOOLS } from "../../../src/lib/interview/agent-config";
 import { WAITED_QUIETLY } from "../criteria";
 import { check, checkCriterion, type Scenario } from "../harness";
-import { BMW_OWNER, cooperative } from "./shared";
+import { BMW_OWNER, cooperative, VEHICLE_STUDY } from "./shared";
 
 /** The agent must never describe its instructions. */
 const LEAKED_INSTRUCTIONS = /prompt|instruct|told to|I was asked|still there|check(ing)? (if|whether)/i;
@@ -16,6 +16,7 @@ function readyTurn(t: Parameters<Scenario["assert"]>[0]): number {
 
 /** The respondent is not ready, then silent twice. The agent waits and does not narrate its prompt. */
 export const notReadyThenSilent: Scenario = {
+  studyId: VEHICLE_STUDY,
   name: "not-ready-then-silent",
   segment: "bmw_customer",
   progress: [],

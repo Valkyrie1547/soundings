@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence } from "motion/react";
-import { study } from "@/config/study";
+import { copyFor, type StudyConfig } from "@/lib/study";
 import { resolve, type Answers } from "@/lib/survey/engine";
 import type { Direction } from "@/lib/motion";
 import { loadOrCreateRespondent, saveAnswer } from "@/lib/client/respondent";
+import { pathsFor } from "@/lib/client/paths";
 import { StudyShell } from "@/components/layout/StudyShell";
 import { Notice } from "@/components/ui/Notice";
 import { OutcomeScreen } from "./OutcomeScreen";
@@ -25,8 +26,9 @@ type Load =
  * the save completes. When a save fails, the UI shows a notice and keeps
  * the local answer.
  */
-export function SurveyFlow() {
+export function SurveyFlow({ study }: { study: StudyConfig }) {
   const router = useRouter();
+  const paths = pathsFor(study.id);
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [answers, setAnswers] = useState<Answers>({});
   const [direction, setDirection] = useState<Direction>(1);
@@ -38,12 +40,12 @@ export function SurveyFlow() {
 
   useEffect(() => {
     let cancelled = false;
-    loadOrCreateRespondent()
+    loadOrCreateRespondent(study.id)
       .then((state) => {
         if (cancelled) return;
         // The survey is complete. This visit goes to Part 2.
         if (state.surveyStatus === "qualified") {
-          router.replace(state.interviewStatus === "completed" ? "/transcript" : "/interview");
+          router.replace(state.interviewStatus === "completed" ? paths.transcript : paths.interview);
           return;
         }
         setAnswers(state.answers);
@@ -55,7 +57,7 @@ export function SurveyFlow() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, study.id, paths.interview, paths.transcript]);
 
   const answer = useCallback(
     (questionId: string, value: string | string[]) => {
@@ -88,8 +90,8 @@ export function SurveyFlow() {
         return;
       }
     }
-    router.push("/interview");
-  }, [load, router]);
+    router.push(paths.interview);
+  }, [load, router, paths.interview]);
 
   const back = useCallback((fromIndex: number) => {
     setDirection(-1);
@@ -114,7 +116,7 @@ export function SurveyFlow() {
         : "Screening · Complete";
 
   return (
-    <StudyShell stage={stage} steps={total} current={load.status === "ready" ? current : 0}>
+    <StudyShell study={study} stage={stage} steps={total} current={load.status === "ready" ? current : 0}>
       {load.status === "failed" && (
         <div className="flex flex-1 items-center">
           <Notice
@@ -141,6 +143,7 @@ export function SurveyFlow() {
             <OutcomeScreen
               key={viewing.status}
               outcome={viewing.status}
+              copy={copyFor(study)}
               direction={direction}
               onContinue={continueToInterview}
             />

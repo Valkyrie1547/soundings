@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { TranscriptTurn } from "@/db/schema";
-import { interviewGuideFor } from "@/config/study";
+import { interviewGuideFor } from "@/lib/study";
+import { vehicleStudy } from "@/test/fixtures";
 import { findUnmarkedAnswers, matchesQuestion } from "./backstop";
 
-const guide = interviewGuideFor("bmw_customer");
+const guide = interviewGuideFor(vehicleStudy, "bmw_customer");
 const text = (id: string) => guide.find((q) => q.id === id)!.text;
 
 function turns(pairs: [TranscriptTurn["role"], string][]): TranscriptTurn[] {
@@ -82,7 +83,7 @@ describe("findUnmarkedAnswers", () => {
   });
 
   it("does not match the other segment's q7 wording", () => {
-    const otherQ7 = interviewGuideFor("potential_bmw_customer").find((q) => q.id === "q7")!.text;
+    const otherQ7 = interviewGuideFor(vehicleStudy, "potential_bmw_customer").find((q) => q.id === "q7")!.text;
     const t = turns([
       ["agent", otherQ7],
       ["user", "Yes, I test drove one last year and liked it a lot."],

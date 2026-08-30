@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Familjen_Grotesk, IBM_Plex_Mono, Instrument_Sans } from "next/font/google";
-import { study } from "@/config/study";
 import "./globals.css";
 
 const familjen = Familjen_Grotesk({
@@ -21,9 +20,10 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
+/** The study layout under `/s/[studyId]` replaces this with the study title. */
 export const metadata: Metadata = {
-  title: study.name,
-  description: study.title,
+  title: "Soundings",
+  description: "Screening survey and voice interview",
 };
 
 /**

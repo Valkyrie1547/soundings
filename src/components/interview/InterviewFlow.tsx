@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import type { RespondentState } from "@/lib/survey/persist";
 import { loadOrCreateRespondent } from "@/lib/client/respondent";
+import { pathsFor } from "@/lib/client/paths";
+import { copyFor, type StudyConfig } from "@/lib/study";
 import { endInterview, reportProgress, startInterview, transcriptIds } from "@/lib/client/interview";
 import { CLIENT_TOOLS } from "@/lib/interview/agent-config";
 import { StudyShell } from "@/components/layout/StudyShell";
@@ -18,16 +20,17 @@ import { useAudioLevels } from "./useAudioLevels";
  * no state that the flow depends on. A refresh, a closed tab, and a lost
  * connection all go to the same resume path on the next visit.
  */
-export function InterviewFlow() {
+export function InterviewFlow({ study }: { study: StudyConfig }) {
   return (
     <ConversationProvider>
-      <Interview />
+      <Interview study={study} />
     </ConversationProvider>
   );
 }
 
-function Interview() {
+function Interview({ study }: { study: StudyConfig }) {
   const router = useRouter();
+  const paths = pathsFor(study.id);
   const [respondent, setRespondent] = useState<RespondentState | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [phase, setPhase] = useState<InterviewPhase>("loading");
@@ -50,11 +53,11 @@ function Interview() {
   // Load the respondent. Go to a different page when this page is not theirs to see.
   useEffect(() => {
     let cancelled = false;
-    loadOrCreateRespondent()
+    loadOrCreateRespondent(study.id)
       .then((state) => {
         if (cancelled) return;
-        if (state.surveyStatus !== "qualified") return router.replace("/");
-        if (state.interviewStatus === "completed") return router.replace("/transcript");
+        if (state.surveyStatus !== "qualified") return router.replace(paths.survey);
+        if (state.interviewStatus === "completed") return router.replace(paths.transcript);
         setRespondent(state);
         setAnswered(state.interviewProgress);
         setFromTranscript(state.transcriptConfirmed);
@@ -64,7 +67,7 @@ function Interview() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, study.id, paths.survey, paths.transcript]);
 
   const guide = respondent?.interviewGuide ?? [];
   const complete = guide.length > 0 && guide.every((q) => answered.includes(q.id));
@@ -80,7 +83,7 @@ function Interview() {
         setAnswered(result.progress.map((p) => p.questionId));
         setFromTranscript(transcriptIds(result.progress));
         if (result.complete) {
-          router.push("/transcript");
+          router.push(paths.transcript);
           return;
         }
         setPhase(reason === "dropped" ? "interrupted" : reason === "completed" ? "incomplete" : "paused");
@@ -90,7 +93,7 @@ function Interview() {
         conversationIdRef.current = null;
       }
     },
-    [respondent, router],
+    [respondent, router, paths.transcript],
   );
 
   const conversation = useConversation({
@@ -203,6 +206,7 @@ function Interview() {
 
   return (
     <StudyShell
+      study={study}
       stage={stage}
       steps={Math.max(guide.length, 1)}
       current={Math.max(railIndex, 0)}
@@ -216,6 +220,7 @@ function Interview() {
       {respondent && (
         <InterviewScreen
           phase={phase}
+          copy={copyFor(study)}
           guide={guide}
           answered={answered}
           fromTranscript={fromTranscript}

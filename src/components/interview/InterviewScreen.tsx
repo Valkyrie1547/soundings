@@ -25,8 +25,15 @@ interface GuideItem {
   topic: string;
 }
 
+/** The study's own words for the first screen. `{total}` in the body is the question count. */
+export interface IntroCopy {
+  interviewHeading: string;
+  interviewBody: string;
+}
+
 interface InterviewScreenProps {
   phase: InterviewPhase;
+  copy: IntroCopy;
   guide: GuideItem[];
   answered: string[];
   /** The answered ids that the transcript backstop marked. */
@@ -69,10 +76,10 @@ export function InterviewScreen(props: InterviewScreenProps) {
 
 /* ---------- Before a call, or between calls ---------- */
 
-function Intro({ phase, guide, answered, error, onBegin }: InterviewScreenProps) {
+function Intro({ phase, copy: study, guide, answered, error, onBegin }: InterviewScreenProps) {
   const done = answered.filter((id) => guide.some((q) => q.id === id)).length;
   const next = guide.find((q) => !answered.includes(q.id));
-  const copy = introCopy(phase, done, guide.length, next?.topic);
+  const copy = introCopy(phase, study, done, guide.length, next?.topic);
 
   return (
     <div className="flex flex-1 flex-col justify-center py-10">
@@ -99,14 +106,14 @@ function Intro({ phase, guide, answered, error, onBegin }: InterviewScreenProps)
   );
 }
 
-function introCopy(phase: InterviewPhase, done: number, total: number, nextTopic?: string) {
+function introCopy(phase: InterviewPhase, study: IntroCopy, done: number, total: number, nextTopic?: string) {
   const pickUp = nextTopic ? `We'll pick up with ${nextTopic}.` : "We'll pick up where you left off.";
   switch (phase) {
     case "ready":
       return {
         eyebrow: "Voice interview",
-        heading: "A short conversation about your car.",
-        body: `A moderator will ask ${total} questions about your ownership experience — about 10 to 15 minutes. Find a quiet spot; you can pause and come back at any time without losing your place.`,
+        heading: study.interviewHeading,
+        body: study.interviewBody.replace("{total}", String(total)),
         action: "Check microphone and start",
       };
     case "resume":

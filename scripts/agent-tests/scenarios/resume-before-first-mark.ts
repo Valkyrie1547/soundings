@@ -1,5 +1,5 @@
 import { check, type Scenario } from "../harness";
-import { anyQuestion, BMW_OWNER, cooperative, INTRO, wording } from "./shared";
+import { anyQuestion, BMW_OWNER, cooperative, INTRO, wording, VEHICLE_STUDY } from "./shared";
 
 const SEGMENT = "bmw_customer";
 
@@ -8,6 +8,7 @@ const NOT_STARTED = /We hadn.t started the questions yet/;
 
 /** A second session with nothing answered. The agent says the questions had not started, and asks q2 next. */
 export const resumeBeforeFirstMark: Scenario = {
+  studyId: VEHICLE_STUDY,
   name: "resume-before-first-mark",
   segment: SEGMENT,
   progress: [],

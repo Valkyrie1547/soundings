@@ -2,30 +2,35 @@
 
 import type { RespondentState } from "@/lib/survey/persist";
 
-const KEY = "soundings:rid";
+const KEY_PREFIX = "soundings:rid";
 const PARAM = "rid";
+
+/** One storage key for each study, so two studies in one browser do not share a respondent. */
+function storageKey(studyId: string) {
+  return `${KEY_PREFIX}:${studyId}`;
+}
 
 /**
  * The respondent identity on the client. The id is in localStorage and also
  * in the URL (?rid=). A copied link resumes the same session in a different
  * window. This is a resumable session, not an authenticated account.
  */
-function readId(): string | null {
+function readId(studyId: string): string | null {
   const params = new URLSearchParams(window.location.search);
   // ?new=1 makes a new respondent. Use it for demos and tests.
   if (params.has("new")) return null;
   const fromUrl = params.get(PARAM);
   if (fromUrl) return fromUrl;
   try {
-    return localStorage.getItem(KEY);
+    return localStorage.getItem(storageKey(studyId));
   } catch {
     return null;
   }
 }
 
-function writeId(id: string) {
+function writeId(studyId: string, id: string) {
   try {
-    localStorage.setItem(KEY, id);
+    localStorage.setItem(storageKey(studyId), id);
   } catch {}
   const url = new URL(window.location.href);
   if (url.searchParams.get(PARAM) !== id || url.searchParams.has("new")) {
@@ -39,32 +44,42 @@ function writeId(id: string) {
 // in development. Without this, two loads with ?new=1 make two respondents.
 let inflight: Promise<RespondentState> | null = null;
 
-/** Gets the current respondent. Creates one on the first visit. Parallel calls share one request. */
-export function loadOrCreateRespondent(): Promise<RespondentState> {
+/** Gets the current respondent of one study. Creates one on the first visit. Parallel calls share one request. */
+export function loadOrCreateRespondent(studyId: string): Promise<RespondentState> {
   if (!inflight) {
-    inflight = load().finally(() => {
+    inflight = load(studyId).finally(() => {
       inflight = null;
     });
   }
   return inflight;
 }
 
-async function load(): Promise<RespondentState> {
-  const id = readId();
-  if (id) {
-    const res = await fetch(`/api/respondents/${id}`, { cache: "no-store" });
-    if (res.ok) {
-      const state = (await res.json()) as RespondentState;
-      writeId(state.id);
-      return state;
-    }
-    if (res.status !== 404 && res.status !== 400) throw new Error(`Load failed (${res.status})`);
-    // The id is unknown, for example from an old link. Continue and start new.
+/** A stored id that belongs to a different study is ignored. The visitor gets a new respondent for this study. */
+async function loadExisting(studyId: string, id: string): Promise<RespondentState | null> {
+  const res = await fetch(`/api/respondents/${id}`, { cache: "no-store" });
+  if (res.ok) {
+    const state = (await res.json()) as RespondentState;
+    return state.studyId === studyId ? state : null;
   }
-  const res = await fetch("/api/respondents", { method: "POST" });
+  if (res.status !== 404 && res.status !== 400) throw new Error(`Load failed (${res.status})`);
+  return null; // The id is unknown, for example from an old link. Continue and start new.
+}
+
+async function load(studyId: string): Promise<RespondentState> {
+  const id = readId(studyId);
+  const existing = id ? await loadExisting(studyId, id) : null;
+  if (existing) {
+    writeId(studyId, existing.id);
+    return existing;
+  }
+  const res = await fetch("/api/respondents", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ studyId }),
+  });
   if (!res.ok) throw new Error(`Create failed (${res.status})`);
   const state = (await res.json()) as RespondentState;
-  writeId(state.id);
+  writeId(studyId, state.id);
   return state;
 }
 

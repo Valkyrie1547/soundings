@@ -1,11 +1,12 @@
 import { SKIP_HANDLED } from "../criteria";
 import { check, checkCriterion, type Scenario } from "../harness";
-import { BMW_OWNER, cooperative, wording } from "./shared";
+import { BMW_OWNER, cooperative, wording, VEHICLE_STUDY } from "./shared";
 
 const Q4 = wording("bmw_customer", "q4");
 
 /** The respondent refuses q4 twice. The agent leaves it open, asks it again before the close, and marks it only then. */
 export const skipRequest: Scenario = {
+  studyId: VEHICLE_STUDY,
   name: "skip-request",
   segment: "bmw_customer",
   progress: [],

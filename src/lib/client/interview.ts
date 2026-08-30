@@ -71,7 +71,9 @@ export interface TranscriptSegment {
 
 export interface TranscriptResponse {
   respondentId: string;
-  segment: "bmw_customer" | "potential_bmw_customer" | null;
+  segment: string | null;
+  /** The short segment name from the study, for the summary line. */
+  segmentLabel: string | null;
   interviewStatus: "not_started" | "in_progress" | "completed";
   segments: TranscriptSegment[];
 }

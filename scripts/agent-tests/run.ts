@@ -13,6 +13,8 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import { loadStudyFile } from "../../src/lib/study/files";
+import type { StudyConfig } from "../../src/lib/study";
 import { simulate, type Scenario, type ScenarioResult } from "./harness";
 import { scenarios } from "./scenarios";
 
@@ -73,15 +75,23 @@ function line(result: ScenarioResult): string {
   return `FAIL ${result.name}: ${result.error} (${result.turns} turns ${result.seconds}s)`;
 }
 
+/** The study files that the selected scenarios need, read once each. Scenarios read files, not the database. */
+async function loadStudies(selected: Scenario[]): Promise<Map<string, StudyConfig>> {
+  const ids = [...new Set(selected.map((s) => s.studyId))];
+  const studies = await Promise.all(ids.map((id) => loadStudyFile(id)));
+  return new Map(ids.map((id, i) => [id, studies[i]]));
+}
+
 async function runScenario(
   client: ElevenLabsClient,
   agentId: string,
   scenario: Scenario,
+  study: StudyConfig,
   repeat: number,
 ): Promise<{ summary: Summary; results: ScenarioResult[] }> {
   const results: ScenarioResult[] = [];
   for (let i = 0; i < repeat; i += 1) {
-    const result = await simulate(client, agentId, scenario);
+    const result = await simulate(client, agentId, scenario, study);
     console.log(line(result));
     results.push(result);
   }
@@ -116,10 +126,11 @@ async function main() {
   guardCost(selected, options);
 
   const client = new ElevenLabsClient({ apiKey });
+  const studies = await loadStudies(selected);
   const summaries: Summary[] = [];
   const all: ScenarioResult[] = [];
   for (const scenario of selected) {
-    const { summary, results } = await runScenario(client, agentId, scenario, options.repeat);
+    const { summary, results } = await runScenario(client, agentId, scenario, studies.get(scenario.studyId)!, options.repeat);
     summaries.push(summary);
     all.push(...results);
   }

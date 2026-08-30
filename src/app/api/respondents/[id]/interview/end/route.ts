@@ -1,4 +1,4 @@
-import { loadRespondent } from "@/lib/survey/persist";
+import { loadRespondentWithStudy } from "@/lib/survey/persist";
 import { endInterviewSession } from "@/lib/interview/persist";
 import { isUuid } from "@/lib/validate";
 
@@ -9,8 +9,8 @@ export async function POST(req: Request, ctx: RouteContext<"/api/respondents/[id
   const { id } = await ctx.params;
   if (!isUuid(id)) return Response.json({ error: "Invalid respondent id" }, { status: 400 });
 
-  const respondent = await loadRespondent(id);
-  if (!respondent?.segment) return Response.json({ error: "Unknown respondent" }, { status: 404 });
+  const found = await loadRespondentWithStudy(id);
+  if (!found?.state.segment) return Response.json({ error: "Unknown respondent" }, { status: 404 });
 
   const body = (await req.json().catch(() => null)) as
     | { sessionId?: unknown; conversationId?: unknown; reason?: unknown }
@@ -23,8 +23,9 @@ export async function POST(req: Request, ctx: RouteContext<"/api/respondents/[id
   const conversationId = typeof body?.conversationId === "string" ? body.conversationId : null;
 
   const result = await endInterviewSession(
+    found.study,
     id,
-    respondent.segment,
+    found.state.segment,
     sessionId,
     conversationId,
     reason as (typeof REASONS)[number],

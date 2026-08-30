@@ -1,68 +1,13 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { study } from "@/config/study";
-import { buildDynamicVariables, guideFor, isComplete, requiredIds } from "./session";
+import { describe, expect, it } from "vitest";
+import { guideFor } from "@/lib/study";
+import { coffeeStudy, vehicleStudy } from "@/test/fixtures";
+import { buildDynamicVariables } from "./session";
 
-const ALL_REQUIRED = ["q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12"];
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
-describe("guideFor", () => {
-  it("gives each segment 12 questions with shared q1 to q6 and q12", () => {
-    const bmw = guideFor("bmw_customer");
-    const potential = guideFor("potential_bmw_customer");
-    expect(bmw).toHaveLength(12);
-    expect(potential).toHaveLength(12);
-    expect(bmw.map((q) => q.id)).toEqual(["q1", ...ALL_REQUIRED]);
-    expect(potential.map((q) => q.id)).toEqual(["q1", ...ALL_REQUIRED]);
-    for (const id of ["q1", "q2", "q6", "q12"]) {
-      expect(bmw.find((q) => q.id === id)?.text).toBe(potential.find((q) => q.id === id)?.text);
-    }
-  });
-
-  it("gives each segment its own q7 to q11", () => {
-    const bmw = guideFor("bmw_customer");
-    const potential = guideFor("potential_bmw_customer");
-    for (const id of ["q7", "q8", "q9", "q10", "q11"]) {
-      expect(bmw.find((q) => q.id === id)?.text).not.toBe(potential.find((q) => q.id === id)?.text);
-    }
-  });
-
-  it("limits the guide in short mode", () => {
-    vi.stubEnv("INTERVIEW_SHORT_MODE", "1");
-    expect(guideFor("bmw_customer").map((q) => q.id)).toEqual(["q1", "q2", "q3", "q12"]);
-    expect(requiredIds("bmw_customer")).toEqual(["q2", "q3", "q12"]);
-  });
-
-  it("does not use short mode for other values", () => {
-    vi.stubEnv("INTERVIEW_SHORT_MODE", "0");
-    expect(guideFor("bmw_customer")).toHaveLength(12);
-  });
-});
-
-describe("requiredIds", () => {
-  it("excludes the readiness check and has 11 ids", () => {
-    expect(requiredIds("bmw_customer")).toEqual(ALL_REQUIRED);
-    expect(requiredIds("potential_bmw_customer")).toEqual(ALL_REQUIRED);
-  });
-});
-
-describe("isComplete", () => {
-  it("is true only when every required id is present", () => {
-    expect(isComplete("bmw_customer", new Set(ALL_REQUIRED))).toBe(true);
-    expect(isComplete("bmw_customer", new Set(ALL_REQUIRED.slice(1)))).toBe(false);
-    expect(isComplete("bmw_customer", new Set())).toBe(false);
-  });
-
-  it("ignores extra ids", () => {
-    expect(isComplete("bmw_customer", new Set([...ALL_REQUIRED, "q1", "q99"]))).toBe(true);
-  });
-});
+const study = vehicleStudy;
 
 describe("buildDynamicVariables", () => {
   it("describes a first session", () => {
-    const v = buildDynamicVariables("rid-1", "bmw_customer", []);
+    const v = buildDynamicVariables(study, "rid-1", "bmw_customer", []);
     expect(v.respondent_id).toBe("rid-1");
     expect(v.is_resume).toBe(false);
     expect(v.opening_line).toBe(study.interview[0].text);
@@ -70,11 +15,11 @@ describe("buildDynamicVariables", () => {
     expect(v.remaining_count).toBe(11);
     expect(v.prior_context).toBe("(none)");
     expect(v.last_topic).toBe("");
-    expect(v.segment_label).toMatch(/BMW/);
+    expect(v.segment_label).toBe("Current BMW owner");
   });
 
   it("lists one guide line per required question and no q1", () => {
-    const v = buildDynamicVariables("rid-1", "potential_bmw_customer", []);
+    const v = buildDynamicVariables(study, "rid-1", "potential_bmw_customer", []);
     const lines = String(v.question_guide).split("\n");
     expect(lines).toHaveLength(11);
     expect(lines[0]).toBe("[q2] How long have you owned your current vehicle?");
@@ -82,12 +27,22 @@ describe("buildDynamicVariables", () => {
     expect(lines.find((l) => l.startsWith("[q7]"))).toContain("considered purchasing a BMW");
   });
 
+  it("builds the guide of a different study from the same code", () => {
+    const v = buildDynamicVariables(coffeeStudy, "rid-1", "non_subscriber", []);
+    const lines = String(v.question_guide).split("\n");
+    expect(lines).toHaveLength(6);
+    expect(lines[0]).toBe("[q2] Tell me about your coffee routine on a typical day.");
+    expect(lines.find((l) => l.startsWith("[q5]"))).toContain("considered a coffee subscription");
+    expect(v.segment_label).toBe("Buys coffee without a subscription");
+    expect(v.opening_line).toBe(coffeeStudy.interview[0].text);
+  });
+
   it("describes a resumed session from progress", () => {
-    const v = buildDynamicVariables("rid-1", "bmw_customer", [
+    const v = buildDynamicVariables(study, "rid-1", "bmw_customer", [
       { questionId: "q2", summary: "Owned for three years.", source: "tool" },
       { questionId: "q3", summary: null, source: "tool" },
     ]);
-    const q3 = guideFor("bmw_customer").find((q) => q.id === "q3")!;
+    const q3 = guideFor(study, "bmw_customer").find((q) => q.id === "q3")!;
     expect(v.is_resume).toBe(true);
     expect(v.last_topic).toBe(q3.topic);
     expect(String(v.opening_line)).toMatch(/^Welcome back/);
@@ -98,7 +53,7 @@ describe("buildDynamicVariables", () => {
   });
 
   it("treats a second session with no progress as a resume", () => {
-    const v = buildDynamicVariables("rid-1", "bmw_customer", [], 2);
+    const v = buildDynamicVariables(study, "rid-1", "bmw_customer", [], 2);
     expect(v.is_resume).toBe(true);
     expect(String(v.opening_line)).toMatch(/^Welcome back/);
     expect(String(v.opening_line)).not.toContain("discussing");
@@ -106,16 +61,20 @@ describe("buildDynamicVariables", () => {
   });
 
   it("takes the last topic from guide order, not answer order", () => {
-    const v = buildDynamicVariables("rid-1", "bmw_customer", [
+    const v = buildDynamicVariables(study, "rid-1", "bmw_customer", [
       { questionId: "q5", summary: "s5", source: "tool" },
       { questionId: "q2", summary: "s2", source: "tool" },
     ]);
-    expect(v.last_topic).toBe(guideFor("bmw_customer").find((q) => q.id === "q5")!.topic);
+    expect(v.last_topic).toBe(guideFor(study, "bmw_customer").find((q) => q.id === "q5")!.topic);
   });
 
   it("ignores progress ids that are not in the guide", () => {
-    const v = buildDynamicVariables("rid-1", "bmw_customer", [{ questionId: "q99", summary: "x", source: "tool" }]);
+    const v = buildDynamicVariables(study, "rid-1", "bmw_customer", [{ questionId: "q99", summary: "x", source: "tool" }]);
     expect(v.prior_context).toBe("(none)");
     expect(v.is_resume).toBe(true);
+  });
+
+  it("falls back to the segment id as the label when the segment is unknown", () => {
+    expect(buildDynamicVariables(study, "rid-1", "ghost", []).segment_label).toBe("ghost");
   });
 });

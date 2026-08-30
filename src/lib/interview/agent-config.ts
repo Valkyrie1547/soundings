@@ -1,5 +1,4 @@
 import type { ElevenLabs } from "@elevenlabs/elevenlabs-js";
-import { study } from "@/config/study";
 
 /**
  * The ElevenLabs agent, as code. `scripts/setup-agent.ts` sends this
@@ -8,10 +7,14 @@ import { study } from "@/config/study";
  *
  * The prompt is generic. The question guide, the respondent's segment, and
  * the resume context come in as dynamic variables. The server builds them
- * from the database when a session starts. This is how resumption works
- * without native support: a resumed interview is a new session whose
- * variables say "q2 to q5 are answered".
+ * from the study and the database when a session starts. One agent serves
+ * every study. This is also how resumption works without native support:
+ * a resumed interview is a new session whose variables say "q2 to q5 are
+ * answered".
  */
+
+/** The agent name on the platform. It does not name a study. */
+export const AGENT_NAME = "Soundings — voice interview moderator";
 
 export const CLIENT_TOOLS = {
   markAnswered: "mark_question_answered",
@@ -64,9 +67,12 @@ Continue with the first question that has not been answered.
 ## Style
 Spoken English, conversational, unhurried. Short sentences. No lists, no headings, no emoji — this is voice.`;
 
-const questionIds = [...new Set(study.interview.filter((q) => q.required).map((q) => q.id))];
-
-/** The workspace tool definitions. The setup script finds tools by name, so a second run updates them and does not make copies. */
+/**
+ * The workspace tool definitions. The setup script finds tools by name, so
+ * a second run updates them and does not make copies. `question_id` is a
+ * free string, because the ids differ between studies. The progress route
+ * rejects an id that is not in the respondent's guide.
+ */
 export const TOOL_CONFIGS: ElevenLabs.ToolRequestModelToolConfig.Client[] = [
   {
     type: "client",
@@ -80,8 +86,7 @@ export const TOOL_CONFIGS: ElevenLabs.ToolRequestModelToolConfig.Client[] = [
       properties: {
         question_id: {
           type: "string",
-          enum: questionIds,
-          description: "The bracketed id of the question that was just answered, e.g. q4.",
+          description: "The bracketed id of the question that was just answered, exactly as it appears in the guide, e.g. q4.",
         },
         summary: {
           type: "string",
@@ -102,7 +107,7 @@ export const TOOL_CONFIGS: ElevenLabs.ToolRequestModelToolConfig.Client[] = [
 
 export function buildAgentConfig(toolIds: string[]): ElevenLabs.conversationalAi.BodyCreateAgentV1ConvaiAgentsCreatePost {
   return {
-    name: `${study.name} — ${study.title}`,
+    name: AGENT_NAME,
     tags: ["soundings"],
     conversationConfig: {
       agent: {
@@ -119,7 +124,7 @@ export function buildAgentConfig(toolIds: string[]): ElevenLabs.conversationalAi
             is_resume: false,
             last_topic: "",
             prior_context: "",
-            opening_line: study.interview[0].text,
+            opening_line: "Thank you for participating in our survey. Are you ready to begin?",
           },
         },
         prompt: {

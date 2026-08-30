@@ -1,4 +1,4 @@
-import type { InterviewQuestion } from "@/config/study";
+import type { InterviewQuestion } from "@/lib/study";
 import type { TranscriptTurn } from "@/db/schema";
 
 /** One missing question that the transcript shows as asked and answered. */

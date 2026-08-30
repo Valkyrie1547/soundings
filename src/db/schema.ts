@@ -8,20 +8,42 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { StudyConfig } from "@/lib/study/schema";
+
+/**
+ * One row for each published version of a study. The newest `published_at`
+ * for an id is the live version. A version never changes after it is
+ * stored. `config` has the shape of `StudySchema`.
+ */
+export const studies = pgTable(
+  "studies",
+  {
+    id: text("id").notNull(),
+    version: integer("version").notNull(),
+    config: jsonb("config").$type<StudyConfig>().notNull(),
+    publishedAt: timestamp("published_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.id, t.version] })],
+);
 
 /**
  * The respondent row is the single source of truth for where a person is in
  * the journey. Each page load goes from respondent id, to this row, to the
- * screen.
+ * screen. The row names the study and the version, so a published change
+ * never re-shapes an interview in progress. The column defaults exist for
+ * the rows that were made before studies were data.
  */
-export const segmentEnum = pgEnum("segment", ["bmw_customer", "potential_bmw_customer"]);
 export const surveyStatusEnum = pgEnum("survey_status", ["in_progress", "screened_out", "qualified"]);
 export const interviewStatusEnum = pgEnum("interview_status", ["not_started", "in_progress", "completed"]);
 
 export const respondents = pgTable("respondents", {
   id: uuid("id").primaryKey().defaultRandom(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  segment: segmentEnum("segment"),
+  studyId: text("study_id").notNull().default("vehicle-ownership"),
+  studyVersion: integer("study_version").notNull().default(1),
+  /** A segment id from the study. Text, because segments are data. */
+  segment: text("segment"),
   surveyStatus: surveyStatusEnum("survey_status").notNull().default("in_progress"),
   interviewStatus: interviewStatusEnum("interview_status").notNull().default("not_started"),
 });

@@ -1,14 +1,17 @@
 /**
  * Text that more than one scenario uses: the cooperative respondent persona
- * and a key phrase for each guide question. A phrase is a short, distinctive
- * part of the scripted wording, so a small change in punctuation by the
- * agent does not break an assertion.
+ * and a key phrase for each guide question of the vehicle study. A phrase
+ * is a short, distinctive part of the scripted wording, so a small change
+ * in punctuation by the agent does not break an assertion.
  */
-import type { Outcome } from "../../../src/config/study";
+import type { Outcome } from "../../../src/lib/study";
+
+/** The study every vehicle scenario runs against. */
+export const VEHICLE_STUDY = "vehicle-ownership";
 
 /** The cooperative respondent. Each scenario adds its own twist after this text. */
-export function cooperative(vehicle: string): string {
-  return `You are a respondent in a voice market-research interview about car ownership. You own ${vehicle}. Answer every question the moderator asks in one or two natural sentences, as a real person would. When the moderator asks if you are ready to begin, say "Yes, I'm ready." Do not ask the moderator any questions. Do not offer extra topics. When the moderator says the interview is complete or says goodbye, reply "Thanks, bye." and nothing else.`;
+export function cooperative(vehicle: string, subject = "car ownership"): string {
+  return `You are a respondent in a voice market-research interview about ${subject}. You own ${vehicle}. Answer every question the moderator asks in one or two natural sentences, as a real person would. When the moderator asks if you are ready to begin, say "Yes, I'm ready." Do not ask the moderator any questions. Do not offer extra topics. When the moderator says the interview is complete or says goodbye, reply "Thanks, bye." and nothing else.`;
 }
 
 export const BMW_OWNER = "a BMW 3 Series that you bought new about three years ago";
@@ -42,14 +45,14 @@ const BY_SEGMENT: Record<Outcome, Record<string, RegExp>> = {
 
 /** The key phrase of one question for one segment. */
 export function wording(segment: Outcome, id: string): RegExp {
-  const found = SHARED[id] ?? BY_SEGMENT[segment][id];
+  const found = SHARED[id] ?? BY_SEGMENT[segment]?.[id];
   if (!found) throw new Error(`no wording for ${id}`);
   return found;
 }
 
 /** One pattern that matches any required question of the segment. */
 export function anyQuestion(segment: Outcome): RegExp {
-  const all = [...Object.values(SHARED), ...Object.values(BY_SEGMENT[segment])];
+  const all = [...Object.values(SHARED), ...Object.values(BY_SEGMENT[segment] ?? {})];
   return new RegExp(all.map((r) => r.source).join("|"), "i");
 }
 

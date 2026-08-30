@@ -4,17 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { loadOrCreateRespondent } from "@/lib/client/respondent";
+import { pathsFor } from "@/lib/client/paths";
 import { fetchTranscript, type TranscriptResponse, type TranscriptSegment } from "@/lib/client/interview";
 import type { TranscriptTurn } from "@/db/schema";
+import type { StudyConfig } from "@/lib/study";
 import { StudyShell } from "@/components/layout/StudyShell";
 import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Notice } from "@/components/ui/Notice";
-
-const SEGMENT_LABEL = {
-  bmw_customer: "BMW Customer",
-  potential_bmw_customer: "Potential BMW Customer",
-} as const;
 
 const END_REASON_LABEL = {
   completed: "completed",
@@ -26,21 +23,22 @@ const END_REASON_LABEL = {
  * The stored transcript. It shows every conversation segment in order.
  * The view polls the server for segments that ElevenLabs has not processed yet.
  */
-export function TranscriptView() {
+export function TranscriptView({ study }: { study: StudyConfig }) {
   const router = useRouter();
+  const paths = pathsFor(study.id);
   const [data, setData] = useState<TranscriptResponse | null>(null);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(
     () =>
-      loadTranscriptForVisitor().then(
+      loadTranscriptForVisitor(study.id).then(
         (result) => {
           if (result.redirect) router.replace(result.redirect);
           else if (result.data) setData(result.data);
         },
         () => setFailed(true),
       ),
-    [router],
+    [router, study.id],
   );
 
   useEffect(() => {
@@ -57,7 +55,7 @@ export function TranscriptView() {
   const turnCount = data?.segments.reduce((n, s) => n + (s.turns?.length ?? 0), 0) ?? 0;
 
   return (
-    <StudyShell stage="Transcript" steps={1} current={0}>
+    <StudyShell study={study} stage="Transcript" steps={1} current={0}>
       <div className="flex flex-1 flex-col py-10">
         <div className="w-full max-w-[640px]">
           <Eyebrow className="mb-3.5">
@@ -69,7 +67,7 @@ export function TranscriptView() {
 
           {failed && <Notice title="Couldn't load the transcript" body="Reload the page to try again." />}
 
-          {data && <Actions data={data} turnCount={turnCount} onResume={() => router.push("/interview")} />}
+          {data && <Actions data={data} turnCount={turnCount} onResume={() => router.push(paths.interview)} />}
 
           {data?.segments.map((seg) => (
             <Segment key={seg.conversationId} segment={seg} />
@@ -86,7 +84,7 @@ function Actions({ data, turnCount, onResume }: { data: TranscriptResponse; turn
   return (
     <>
       <p className="mb-8 font-mono text-[12px] text-muted">
-        {data.segment ? SEGMENT_LABEL[data.segment] : ""} · {sessions} session{sessions === 1 ? "" : "s"} · {turnCount}{" "}
+        {data.segmentLabel ?? ""} · {sessions} session{sessions === 1 ? "" : "s"} · {turnCount}{" "}
         turns
       </p>
       {data.interviewStatus !== "completed" && (
@@ -151,10 +149,11 @@ function Turns({ turns }: { turns: TranscriptTurn[] | null }) {
 type VisitorTranscript = { redirect: string; data?: never } | { redirect?: never; data: TranscriptResponse };
 
 /** Loads the transcript for this browser's respondent. Returns a redirect when the page is not theirs to see. */
-async function loadTranscriptForVisitor(): Promise<VisitorTranscript> {
-  const state = await loadOrCreateRespondent();
-  if (state.surveyStatus !== "qualified") return { redirect: "/" };
-  if (state.interviewStatus === "not_started") return { redirect: "/interview" };
+async function loadTranscriptForVisitor(studyId: string): Promise<VisitorTranscript> {
+  const paths = pathsFor(studyId);
+  const state = await loadOrCreateRespondent(studyId);
+  if (state.surveyStatus !== "qualified") return { redirect: paths.survey };
+  if (state.interviewStatus === "not_started") return { redirect: paths.interview };
   return { data: await fetchTranscript(state.id) };
 }
 

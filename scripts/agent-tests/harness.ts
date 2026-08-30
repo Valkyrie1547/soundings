@@ -8,7 +8,7 @@
  */
 import type { ElevenLabs, ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import { CLIENT_TOOLS } from "../../src/lib/interview/agent-config";
-import type { Outcome } from "../../src/config/study";
+import type { Outcome, StudyConfig } from "../../src/lib/study";
 import { buildDynamicVariables, type ProgressEntry } from "../../src/lib/interview/session";
 
 export type Turn = ElevenLabs.ConversationHistoryTranscriptResponseModel;
@@ -25,6 +25,8 @@ export type PassRate = 1 | 0.8;
 
 export interface Scenario {
   name: string;
+  /** The study in `studies/<id>.json` that the scenario runs against. */
+  studyId: string;
   segment: Outcome;
   /** What the database would hold. It feeds `buildDynamicVariables`. */
   progress: ProgressEntry[];
@@ -38,7 +40,7 @@ export interface Scenario {
   criteria: ElevenLabs.PromptEvaluationCriteria[];
   passRate: PassRate;
   /** Throws on failure. */
-  assert(t: TranscriptView): void;
+  assert(t: TranscriptView, study: StudyConfig): void;
 }
 
 export interface ScenarioResult {
@@ -150,8 +152,9 @@ export function checkCriterion(t: TranscriptView, id: string): void {
 /** Builds the request body for one scenario. Pure, so a test can inspect it. */
 export function requestFor(
   scenario: Scenario,
+  study: StudyConfig,
 ): ElevenLabs.conversationalAi.BodySimulatesAConversationV1ConvaiAgentsAgentIdSimulateConversationPost {
-  const dynamicVariables = buildDynamicVariables("simulated", scenario.segment, scenario.progress, scenario.attemptNo);
+  const dynamicVariables = buildDynamicVariables(study, "simulated", scenario.segment, scenario.progress, scenario.attemptNo);
   return {
     simulationSpecification: {
       // The SDK sends an explicit `undefined` as `null`, and the API rejects it. Set the key only when there is a value.
@@ -173,15 +176,20 @@ export function requestFor(
 }
 
 /** Runs one scenario. Assertion errors become a failed result. Transport errors are thrown. */
-export async function simulate(client: ElevenLabsClient, agentId: string, scenario: Scenario): Promise<ScenarioResult> {
+export async function simulate(
+  client: ElevenLabsClient,
+  agentId: string,
+  scenario: Scenario,
+  study: StudyConfig,
+): Promise<ScenarioResult> {
   const started = Date.now();
-  const result = await client.conversationalAi.agents.simulateConversation(agentId, requestFor(scenario));
+  const result = await client.conversationalAi.agents.simulateConversation(agentId, requestFor(scenario, study));
   const seconds = Math.round((Date.now() - started) / 1000);
   const transcript = result.simulatedConversation;
   const view = viewOf(transcript, result.analysis);
   const base = { name: scenario.name, turns: transcript.length, seconds, transcript, analysis: result.analysis };
   try {
-    scenario.assert(view);
+    scenario.assert(view, study);
     return { ...base, ok: true };
   } catch (err) {
     return { ...base, ok: false, error: err instanceof Error ? err.message : String(err) };

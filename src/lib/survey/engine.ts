@@ -1,4 +1,4 @@
-import type { Option, Outcome, Question, StudyConfig } from "@/config/study";
+import type { Option, Outcome, Question, StudyConfig } from "@/lib/study";
 
 /** The answers, keyed by question id. A multi-select question stores an array. */
 export type Answers = Record<string, string | string[]>;

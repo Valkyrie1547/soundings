@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "agent:setup": "node --env-file=.env.local --import tsx scripts/setup-agent.ts",
     "agent:test": "node --env-file=.env.local --import tsx scripts/agent-tests/run.ts",
+    "studies:seed": "node --env-file=.env.local --import tsx scripts/studies-seed.ts",
     "lint:complexity": "eslint --rule \"complexity: [warn, 5]\" src scripts",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -26,7 +27,8 @@
     "next": "16.3.3",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

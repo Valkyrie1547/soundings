@@ -16,9 +16,10 @@ describe("TOOL_CONFIGS", () => {
     expect(finish.expectsResponse).toBe(false);
   });
 
-  it("limits question_id to the required ids, without duplicates", () => {
-    const props = mark.parameters?.properties as Record<string, { enum?: string[] }>;
-    expect(props.question_id.enum).toEqual(["q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12"]);
+  it("takes question_id as a free string, because ids differ between studies", () => {
+    const props = mark.parameters?.properties as Record<string, { type: string; enum?: string[] }>;
+    expect(props.question_id.type).toBe("string");
+    expect(props.question_id.enum).toBeUndefined();
     expect(mark.parameters?.required).toEqual(["question_id", "summary"]);
   });
 });

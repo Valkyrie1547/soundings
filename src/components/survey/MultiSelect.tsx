@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { MultiSelectQuestion } from "@/config/study";
+import type { MultiSelectQuestion } from "@/lib/study";
 import { Button } from "@/components/ui/Button";
 import { KeyHint } from "@/components/ui/KeyHint";
 import { OptionRow } from "@/components/ui/OptionRow";

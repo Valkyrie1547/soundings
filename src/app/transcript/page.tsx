@@ -1,5 +1,5 @@
-import { TranscriptView } from "@/components/transcript/TranscriptView";
+import { redirectToDefaultStudy } from "@/lib/study/page";
 
-export default function TranscriptPage() {
-  return <TranscriptView />;
+export default async function TranscriptPage({ searchParams }: PageProps<"/transcript">) {
+  redirectToDefaultStudy("/transcript", await searchParams);
 }

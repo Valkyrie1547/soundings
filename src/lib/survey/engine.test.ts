@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { study } from "@/config/study";
+import { coffeeStudy, vehicleStudy as study } from "@/test/fixtures";
 import { judge, resolve, type Answers } from "./engine";
 
 const base: Answers = { age: "25_34", income: "100k_150k", owns_car: "yes" };
@@ -64,5 +64,31 @@ describe("judge", () => {
 
   it("ignores option ids that are not in the question", () => {
     expect(judge(brands, ["lada"], study.outcomePrecedence)).toEqual({ kind: "continue" });
+  });
+});
+
+describe("resolve on a second study shape", () => {
+  const base: Answers = { age: "25_34", frequency: "daily" };
+
+  it("walks the coffee screening in order", () => {
+    expect(resolve(coffeeStudy, {})).toMatchObject({ status: "in_progress", index: 0, question: { id: "age" } });
+    expect(resolve(coffeeStudy, base)).toMatchObject({ status: "in_progress", index: 2, question: { id: "sources" } });
+  });
+
+  it("terminates on a rare coffee drinker", () => {
+    expect(resolve(coffeeStudy, { ...base, frequency: "rarely" })).toEqual({ status: "screened_out", atQuestion: "frequency" });
+  });
+
+  it.each([
+    [["subscription"], "subscriber"],
+    [["supermarket"], "non_subscriber"],
+    [["subscription", "supermarket"], "subscriber"],
+    [["roaster", "office"], "non_subscriber"],
+  ])("sources %j qualifies as %s", (sources, outcome) => {
+    expect(resolve(coffeeStudy, { ...base, sources })).toEqual({ status: "qualified", outcome });
+  });
+
+  it("terminates when only office coffee is selected", () => {
+    expect(resolve(coffeeStudy, { ...base, sources: ["office"] })).toEqual({ status: "screened_out", atQuestion: "sources" });
   });
 });

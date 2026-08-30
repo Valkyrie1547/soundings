@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import type { Question } from "@/config/study";
+import type { Question } from "@/lib/study";
 import { screenTransition, screenVariants, screenVariantsQuiet, type Direction } from "@/lib/motion";
 import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SingleSelectQuestion } from "@/config/study";
+import type { SingleSelectQuestion } from "@/lib/study";
 import { durations } from "@/lib/motion";
 import { OptionRow } from "@/components/ui/OptionRow";
 import { useQuestionKeys } from "./useQuestionKeys";

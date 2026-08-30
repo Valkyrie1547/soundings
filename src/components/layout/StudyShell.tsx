@@ -1,9 +1,13 @@
 import type { CSSProperties } from "react";
-import { study } from "@/config/study";
+import type { StudyConfig } from "@/lib/study";
 import { SoundingLine } from "@/components/ui/SoundingLine";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
+/** The part of a study that the frame shows. The admin pages give a neutral one. */
+export type ShellStudy = Pick<StudyConfig, "name" | "title" | "theme">;
+
 interface StudyShellProps {
+  study: ShellStudy;
   /** The label at the right of the header, for example "Screening · 1 of 4". */
   stage: string;
   steps: number;
@@ -18,7 +22,7 @@ interface StudyShellProps {
  * accent, shows the sounding-line rail, and shows the header. Screens render
  * inside it.
  */
-export function StudyShell({ stage, steps, current, audio, children }: StudyShellProps) {
+export function StudyShell({ study, stage, steps, current, audio, children }: StudyShellProps) {
   const accent = {
     "--accent-light": study.theme.accent.light,
     "--accent-dark": study.theme.accent.dark,
