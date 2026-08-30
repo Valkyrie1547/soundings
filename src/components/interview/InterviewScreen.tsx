@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { KeyHint } from "@/components/ui/KeyHint";
 import { Notice } from "@/components/ui/Notice";
+import { MicMeter } from "./MicMeter";
 
 export type InterviewPhase =
   | "loading"
@@ -80,6 +81,7 @@ function Intro({ phase, guide, answered, error, onBegin }: InterviewScreenProps)
         </h1>
         <p className="mb-8 max-w-[52ch] text-[17px] leading-7 text-muted">{copy.body}</p>
         {error && <Notice title="Something went wrong" body={error} className="mb-6" />}
+        {copy.action && <MicMeter className="mb-8" />}
         {copy.action && (
           <div className="flex items-center gap-3">
             <Button onClick={onBegin} autoFocus disabled={phase === "loading"}>
