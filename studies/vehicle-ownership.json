@@ -1,6 +1,6 @@
 {
   "id": "vehicle-ownership",
-  "version": 1,
+  "version": 2,
   "name": "Soundings",
   "title": "Vehicle ownership study",
   "theme": {
@@ -78,7 +78,7 @@
       "audience": "all",
       "required": false,
       "topic": "getting started",
-      "text": "Thank you for participating in our survey. I'm going to ask you 10-15 questions about your car ownership experience. This should take about 10-15 minutes. Are you ready to begin?"
+      "text": "Thank you for participating in our survey. I'm going to ask you {count} questions about your car ownership experience. This should take about 10-15 minutes. Are you ready to begin?"
     },
     { "id": "q2", "audience": "all", "required": true, "topic": "how long you've owned your vehicle", "text": "How long have you owned your current vehicle?", "anchor": "how long have you owned" },
     { "id": "q3", "audience": "all", "required": true, "topic": "what influenced your purchase", "text": "What were the main factors that influenced your decision to purchase this specific brand?" },

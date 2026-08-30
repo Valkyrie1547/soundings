@@ -34,7 +34,7 @@ A study is one JSON document in `studies/`. The survey, the interview guide, the
 | `segments` | The qualified groups: id, agent label, transcript label. |
 | `screening` | Single and multi select questions. An option can `terminate` or `qualify` into a segment. |
 | `outcomePrecedence` | Which segment wins when one answer qualifies for more than one. |
-| `interview` | The spoken guide. `audience` is `all` or one segment id. The first question is the readiness check. |
+| `interview` | The spoken guide. `audience` is `all` or one segment id. The first question is the readiness check. `{count}` in a question text becomes the real question count for the respondent's guide. |
 
 To add a study: put `<id>.json` in `studies/`, run `npm run studies:seed`, and open `/s/<id>`. The seed script validates the document first and refuses a version that exists with different content. A respondent keeps the version they started with, so a published change never re-shapes an interview in progress.
 

@@ -34,9 +34,15 @@ export function buildDynamicVariables(
   const isResume = attemptNo > 1 || progress.length > 0;
   const remaining = guide.filter((q) => q.required && !answered.has(q.id));
 
+  // "{count}" in a question text becomes the real question count for this
+  // guide. The moderator then says "11 questions", not "10-15 questions",
+  // and the number stays correct per segment and in short mode.
+  const total = guide.filter((q) => q.required).length;
+  const spoken = (text: string) => text.replaceAll("{count}", String(total));
+
   const questionGuide = guide
     .filter((q) => q.required)
-    .map((q) => `[${q.id}] ${q.text}`)
+    .map((q) => `[${q.id}] ${spoken(q.text)}`)
     .join("\n");
 
   const lastAnswered = [...guide].reverse().find((q) => answered.has(q.id));
@@ -50,7 +56,7 @@ export function buildDynamicVariables(
     .filter(Boolean)
     .join("\n");
 
-  const openingLine = openingLineFor(isResume, lastTopic, guide[0].text);
+  const openingLine = openingLineFor(isResume, lastTopic, spoken(guide[0].text));
 
   return {
     respondent_id: respondentId,

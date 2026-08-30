@@ -1,6 +1,6 @@
 {
   "id": "coffee-subscription",
-  "version": 1,
+  "version": 2,
   "name": "Soundings",
   "title": "Coffee habits study",
   "theme": {
@@ -60,7 +60,7 @@
       "audience": "all",
       "required": false,
       "topic": "getting started",
-      "text": "Thank you for taking part. I'm going to ask you a few questions about how you buy and drink coffee. This should take about five to ten minutes. Are you ready to begin?"
+      "text": "Thank you for taking part. I'm going to ask you {count} questions about how you buy and drink coffee. This should take about five to ten minutes. Are you ready to begin?"
     },
     { "id": "q2", "audience": "all", "required": true, "topic": "your daily coffee routine", "text": "Tell me about your coffee routine on a typical day.", "anchor": "typical day" },
     { "id": "q3", "audience": "all", "required": true, "topic": "what matters when you choose coffee", "text": "When you choose which coffee to buy, what matters most to you?" },

@@ -10,7 +10,9 @@ describe("buildDynamicVariables", () => {
     const v = buildDynamicVariables(study, "rid-1", "bmw_customer", []);
     expect(v.respondent_id).toBe("rid-1");
     expect(v.is_resume).toBe(false);
-    expect(v.opening_line).toBe(study.interview[0].text);
+    // "{count}" in the readiness text becomes the real question count.
+    expect(v.opening_line).toBe(study.interview[0].text.replace("{count}", "11"));
+    expect(String(v.opening_line)).toContain("ask you 11 questions");
     expect(v.answered_question_ids).toBe("none");
     expect(v.remaining_count).toBe(11);
     expect(v.prior_context).toBe("(none)");
@@ -34,7 +36,7 @@ describe("buildDynamicVariables", () => {
     expect(lines[0]).toBe("[q2] Tell me about your coffee routine on a typical day.");
     expect(lines.find((l) => l.startsWith("[q5]"))).toContain("considered a coffee subscription");
     expect(v.segment_label).toBe("Buys coffee without a subscription");
-    expect(v.opening_line).toBe(coffeeStudy.interview[0].text);
+    expect(v.opening_line).toBe(coffeeStudy.interview[0].text.replace("{count}", "6"));
   });
 
   it("describes a resumed session from progress", () => {
