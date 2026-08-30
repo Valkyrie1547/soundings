@@ -4,7 +4,7 @@ import { check, checkCriterion, type Scenario } from "../harness";
 import { BMW_OWNER, cooperative } from "./shared";
 
 /** The agent must never describe its instructions. */
-const LEAKED_INSTRUCTIONS = /prompt|instruct|told to|I was asked/i;
+const LEAKED_INSTRUCTIONS = /prompt|instruct|told to|I was asked|still there|check(ing)? (if|whether)/i;
 
 /** A user turn that says ready, and does not say "not". */
 function readyTurn(t: Parameters<Scenario["assert"]>[0]): number {
