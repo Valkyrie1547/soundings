@@ -92,7 +92,6 @@ scripts/agent-tests/         Simulated-conversation scenarios: harness, criteria
 - Unit tests sit next to the code as `*.test.ts`. They run without a database, ElevenLabs, or a browser session.
 - Agent behaviour tests are in `scripts/agent-tests/`. They run the real agent against a simulated respondent with `simulateConversation`. Run one scenario with `npm run agent:test -- --only happy-path`. More than three runs need `--yes` or `CI=1`. `--repeat N` reports a pass rate. `--json` writes `last-run.json` with the transcripts.
 - When a scenario fails, change `src/lib/interview/agent-config.ts`, run `npm run agent:setup`, and run the scenario again. Do not change the agent from the test harness.
-- See `CLAUDE.md` for the full rules.
 
 ## Documents
 

@@ -44,3 +44,8 @@ next-env.d.ts
 # agent simulation output
 /scripts/agent-tests/last-run.json
 coverage/
+
+# local working notes, not part of the submission
+CLAUDE.md
+AGENTS.md
+/docs/prompts/
