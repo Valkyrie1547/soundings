@@ -11,5 +11,11 @@ export default defineConfig({
     include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.ts"],
     restoreMocks: true,
     unstubEnvs: true,
+    // Thresholds sit two points under what the suite reaches, so the gate
+    // catches a real drop and does not break on one refactor.
+    coverage: {
+      provider: "v8",
+      thresholds: { statements: 86, branches: 84, functions: 84, lines: 87 },
+    },
   },
 });

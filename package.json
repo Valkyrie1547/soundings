@@ -15,7 +15,8 @@
     "studies:seed": "node --env-file=.env.local --import tsx scripts/studies-seed.ts",
     "lint:complexity": "eslint --rule \"complexity: [warn, 5]\" src scripts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.65.0",
@@ -37,6 +38,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.11",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",

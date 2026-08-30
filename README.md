@@ -40,6 +40,12 @@ To add a study: put `<id>.json` in `studies/`, run `npm run studies:seed`, and o
 
 The database rows that existed before studies were data belong to `vehicle-ownership@1` through column defaults.
 
+### Admin
+
+`/admin` lists every study with respondent counts, and edits studies in the browser: paste JSON, **Validate** (zod issues with paths), **Preview** (the screening flow and the guide each segment hears), **Publish** (the registry assigns the next version), and **Try the agent** (one simulated happy-path interview of the published version against the live agent; uses ElevenLabs credit; one run per study per minute).
+
+Set `ADMIN_TOKEN` in the environment, then open `/admin?token=<value>` once. The token becomes an httpOnly cookie and leaves the URL. Without a valid cookie, every admin path answers 404. When `ADMIN_TOKEN` is not set, the admin routes are off. The gate is `src/proxy.ts`.
+
 ## Scripts
 
 | Command | Function |
