@@ -50,6 +50,12 @@ export interface InterviewQuestion {
   text: string;
   /** A short label for the progress list and for the resume greeting. */
   topic: string;
+  /**
+   * A short phrase from the spoken wording. The transcript backstop matches
+   * this phrase when the agent paraphrases the question. Use it only where
+   * word overlap with `text` is weak.
+   */
+  anchor?: string;
 }
 
 export interface StudyConfig {
@@ -143,15 +149,15 @@ export const study: StudyConfig = {
       topic: "getting started",
       text: "Thank you for participating in our survey. I'm going to ask you 10-15 questions about your car ownership experience. This should take about 10-15 minutes. Are you ready to begin?",
     },
-    { id: "q2", audience: "all", required: true, topic: "how long you've owned your vehicle", text: "How long have you owned your current vehicle?" },
+    { id: "q2", audience: "all", required: true, topic: "how long you've owned your vehicle", text: "How long have you owned your current vehicle?", anchor: "how long have you owned" },
     { id: "q3", audience: "all", required: true, topic: "what influenced your purchase", text: "What were the main factors that influenced your decision to purchase this specific brand?" },
-    { id: "q4", audience: "all", required: true, topic: "your satisfaction rating", text: "On a scale of 1 to 10, how satisfied are you with your current vehicle?" },
+    { id: "q4", audience: "all", required: true, topic: "your satisfaction rating", text: "On a scale of 1 to 10, how satisfied are you with your current vehicle?", anchor: "scale of 1 to 10" },
     { id: "q5", audience: "all", required: true, topic: "the features you value most", text: "What features or aspects of your car do you value most?" },
-    { id: "q6", audience: "all", required: true, topic: "issues or concerns with your vehicle", text: "Have you experienced any issues or concerns with your vehicle?" },
+    { id: "q6", audience: "all", required: true, topic: "issues or concerns with your vehicle", text: "Have you experienced any issues or concerns with your vehicle?", anchor: "any issues or concerns" },
 
     { id: "q7", audience: "bmw_customer", required: true, topic: "why you chose BMW over other luxury brands", text: "What made you choose BMW over other luxury brands like Mercedes or Audi?" },
     { id: "q8", audience: "bmw_customer", required: true, topic: "BMW's customer service and dealership experience", text: "How would you rate BMW's customer service and dealership experience?" },
-    { id: "q9", audience: "bmw_customer", required: true, topic: "which BMW model you own", text: "Which BMW model do you own, and what do you love most about it?" },
+    { id: "q9", audience: "bmw_customer", required: true, topic: "which BMW model you own", text: "Which BMW model do you own, and what do you love most about it?", anchor: "which bmw model" },
     { id: "q10", audience: "bmw_customer", required: true, topic: "whether you'd buy another BMW", text: "How likely are you to purchase another BMW in the future? What would make you consider switching brands?" },
     { id: "q11", audience: "bmw_customer", required: true, topic: "what BMW could improve", text: "What could BMW improve to make your ownership experience even better?" },
 
@@ -161,7 +167,7 @@ export const study: StudyConfig = {
     { id: "q10", audience: "potential_bmw_customer", required: true, topic: "what your current brand does better", text: "Compared to BMW, what do you think your current brand does better?" },
     { id: "q11", audience: "potential_bmw_customer", required: true, topic: "which luxury brand you'd recommend", text: "If you were to recommend a luxury car brand to a friend, which would you choose and why?" },
 
-    { id: "q12", audience: "all", required: true, topic: "anything else about your ownership experience", text: "Is there anything else you'd like to share about your vehicle ownership experience?" },
+    { id: "q12", audience: "all", required: true, topic: "anything else about your ownership experience", text: "Is there anything else you'd like to share about your vehicle ownership experience?", anchor: "anything else you'd like to share" },
   ],
 };
 

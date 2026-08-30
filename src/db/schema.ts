@@ -53,6 +53,9 @@ export const interviewSessions = pgTable("interview_sessions", {
   endReason: text("end_reason").$type<"completed" | "dropped" | "user_ended">(),
 });
 
+/** Who marked a question: the agent's tool call, or the transcript backstop. */
+export type ProgressSource = "tool" | "transcript";
+
 /** A set. A question is answered when the agent marks it once. */
 export const interviewProgress = pgTable(
   "interview_progress",
@@ -62,6 +65,7 @@ export const interviewProgress = pgTable(
       .references(() => respondents.id, { onDelete: "cascade" }),
     questionId: text("question_id").notNull(),
     summary: text("summary"),
+    source: text("source").$type<ProgressSource>().notNull().default("tool"),
     answeredAt: timestamp("answered_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.respondentId, t.questionId] })],

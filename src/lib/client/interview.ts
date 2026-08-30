@@ -45,7 +45,19 @@ export function endInterview(
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ sessionId, conversationId, reason }),
     keepalive: true, // The request continues after the tab closes.
-  }).then((r) => json<{ complete: boolean; progress: ProgressEntry[] }>(r));
+  }).then((r) => json<EndResult>(r));
+}
+
+export interface EndResult {
+  complete: boolean;
+  progress: ProgressEntry[];
+  /** The ids that the transcript backstop marked in this call. */
+  backstop: string[];
+}
+
+/** The ids in `progress` that the transcript backstop marked, not the agent. */
+export function transcriptIds(progress: ProgressEntry[]): string[] {
+  return progress.filter((p) => p.source === "transcript").map((p) => p.questionId);
 }
 
 export interface TranscriptSegment {

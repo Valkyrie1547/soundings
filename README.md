@@ -45,6 +45,7 @@ src/config/study.ts          The study: title, accent, questions, branch rules, 
 src/lib/survey/engine.ts     Pure function: stored answers -> current screen or outcome
 src/lib/survey/persist.ts    Respondent rows and answer upserts
 src/lib/interview/           Agent configuration, dynamic variables, sessions, transcripts
+src/lib/interview/backstop.ts Pure function: transcript turns -> missing questions that were answered
 src/lib/client/              Browser-side API calls and respondent identity
 src/lib/motion.ts            Transition variants and durations
 src/db/schema.ts             Drizzle schema

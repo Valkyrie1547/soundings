@@ -5,10 +5,10 @@ import { anyQuestion, BMW_OWNER, cooperative, INTRO, wording } from "./shared";
 const SEGMENT = "bmw_customer";
 
 const progress: ProgressEntry[] = [
-  { questionId: "q2", summary: "They have owned the car for about three years." },
-  { questionId: "q3", summary: "Driving dynamics and the dealer's trade-in offer influenced the purchase." },
-  { questionId: "q4", summary: "They rate their satisfaction at eight out of ten." },
-  { questionId: "q5", summary: "They value the handling and the interior most." },
+  { questionId: "q2", summary: "They have owned the car for about three years.", source: "tool" },
+  { questionId: "q3", summary: "Driving dynamics and the dealer's trade-in offer influenced the purchase.", source: "tool" },
+  { questionId: "q4", summary: "They rate their satisfaction at eight out of ten.", source: "tool" },
+  { questionId: "q5", summary: "They value the handling and the interior most.", source: "tool" },
 ];
 
 const Q5_TOPIC = guideFor(SEGMENT).find((q) => q.id === "q5")?.topic ?? "";

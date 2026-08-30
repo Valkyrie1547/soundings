@@ -13,13 +13,15 @@ export interface RespondentState {
   answers: Answers;
   /** The interview questions that are marked answered, in the order they were marked. */
   interviewProgress: string[];
+  /** The subset of `interviewProgress` that the transcript backstop marked, not the agent. */
+  transcriptConfirmed: string[];
   /** The required interview questions for this respondent's segment, in order. */
   interviewGuide: { id: string; topic: string }[];
 }
 
 export async function createRespondent(): Promise<RespondentState> {
   const [row] = await db().insert(respondents).values({}).returning();
-  return { ...pick(row), answers: {}, interviewProgress: [] };
+  return { ...pick(row), answers: {}, interviewProgress: [], transcriptConfirmed: [] };
 }
 
 export async function loadRespondent(id: string): Promise<RespondentState | null> {
@@ -31,13 +33,18 @@ export async function loadRespondent(id: string): Promise<RespondentState | null
       .from(surveyAnswers)
       .where(eq(surveyAnswers.respondentId, id)),
     db()
-      .select({ questionId: interviewProgress.questionId })
+      .select({ questionId: interviewProgress.questionId, source: interviewProgress.source })
       .from(interviewProgress)
       .where(eq(interviewProgress.respondentId, id))
       .orderBy(asc(interviewProgress.answeredAt)),
   ]);
   const answers: Answers = Object.fromEntries(rows.map((r) => [r.questionId, r.answer]));
-  return { ...pick(row), answers, interviewProgress: progress.map((p) => p.questionId) };
+  return {
+    ...pick(row),
+    answers,
+    interviewProgress: progress.map((p) => p.questionId),
+    transcriptConfirmed: progress.filter((p) => p.source === "transcript").map((p) => p.questionId),
+  };
 }
 
 /**
@@ -73,7 +80,12 @@ export async function saveAnswer(
     .where(eq(respondents.id, id))
     .returning();
 
-  return { ...pick(row), answers, interviewProgress: existing.interviewProgress };
+  return {
+    ...pick(row),
+    answers,
+    interviewProgress: existing.interviewProgress,
+    transcriptConfirmed: existing.transcriptConfirmed,
+  };
 }
 
 function pick(row: typeof respondents.$inferSelect) {

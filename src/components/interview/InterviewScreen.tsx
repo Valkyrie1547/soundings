@@ -29,6 +29,8 @@ interface InterviewScreenProps {
   phase: InterviewPhase;
   guide: GuideItem[];
   answered: string[];
+  /** The answered ids that the transcript backstop marked. */
+  fromTranscript: string[];
   complete: boolean;
   isSpeaking: boolean;
   connectionStatus: string;
@@ -149,7 +151,7 @@ function introCopy(phase: InterviewPhase, done: number, total: number, nextTopic
 
 /* ---------- During a call ---------- */
 
-function Call({ phase, guide, answered, complete, isSpeaking, onPause, onFinish }: InterviewScreenProps) {
+function Call({ phase, guide, answered, fromTranscript, complete, isSpeaking, onPause, onFinish }: InterviewScreenProps) {
   const current = guide.find((q) => !answered.includes(q.id));
   const status =
     phase === "connecting" ? "Connecting" : isSpeaking ? "Moderator is speaking" : "Listening";
@@ -173,30 +175,16 @@ function Call({ phase, guide, answered, complete, isSpeaking, onPause, onFinish 
           </h1>
 
           <ol className="flex flex-col gap-1.5" aria-label="Interview progress">
-            {guide.map((q, i) => {
-              const done = answered.includes(q.id);
-              const now = q.id === current?.id && !complete;
-              return (
-                <li
-                  key={q.id}
-                  className={cn(
-                    "flex items-center gap-3.5 py-1 text-[15px] leading-6 transition-colors duration-(--dur-micro) ease-(--ease)",
-                    done ? "text-muted" : now ? "text-text" : "text-faint",
-                  )}
-                >
-                  <span className="w-5 text-right font-mono text-[11px] text-faint">{i + 1}</span>
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "size-2 shrink-0 transition-colors duration-(--dur-micro) ease-(--ease)",
-                      done ? "bg-accent" : now ? "border border-accent" : "border border-line",
-                    )}
-                    style={{ clipPath: "polygon(50% 0, 100% 50%, 50% 100%, 0 50%)" }}
-                  />
-                  <span className={cn(done && "line-through decoration-line")}>{capitalize(q.topic)}</span>
-                </li>
-              );
-            })}
+            {guide.map((q, i) => (
+              <ChecklistItem
+                key={q.id}
+                index={i + 1}
+                topic={q.topic}
+                done={answered.includes(q.id)}
+                now={q.id === current?.id && !complete}
+                fromTranscript={fromTranscript.includes(q.id)}
+              />
+            ))}
           </ol>
         </div>
       </div>
@@ -218,6 +206,51 @@ function Call({ phase, guide, answered, complete, isSpeaking, onPause, onFinish 
       </footer>
     </>
   );
+}
+
+interface ChecklistItemProps {
+  index: number;
+  topic: string;
+  done: boolean;
+  now: boolean;
+  fromTranscript: boolean;
+}
+
+/** One row of the checklist. A transcript-sourced tick is a hollow diamond, not a solid one. */
+function ChecklistItem({ index, topic, done, now, fromTranscript }: ChecklistItemProps) {
+  const confirmed = done && fromTranscript;
+  return (
+    <li
+      className={cn(
+        "flex items-center gap-3.5 py-1 text-[15px] leading-6 transition-colors duration-(--dur-micro) ease-(--ease)",
+        rowStyle(done, now),
+      )}
+    >
+      <span className="w-5 text-right font-mono text-[11px] text-faint">{index}</span>
+      <span
+        aria-hidden
+        title={confirmed ? "Confirmed from the transcript" : undefined}
+        className={cn(
+          "size-2 shrink-0 transition-colors duration-(--dur-micro) ease-(--ease)",
+          diamondStyle(done, now, confirmed),
+        )}
+        style={{ clipPath: "polygon(50% 0, 100% 50%, 50% 100%, 0 50%)" }}
+      />
+      <span className={cn(done && "line-through decoration-line")}>{capitalize(topic)}</span>
+    </li>
+  );
+}
+
+function rowStyle(done: boolean, now: boolean) {
+  if (done) return "text-muted";
+  return now ? "text-text" : "text-faint";
+}
+
+/** Hollow accent when the transcript confirmed it. Solid accent when the agent marked it. */
+function diamondStyle(done: boolean, now: boolean, confirmed: boolean) {
+  if (confirmed) return "border-2 border-accent";
+  if (done) return "bg-accent";
+  return now ? "border border-accent" : "border border-line";
 }
 
 function capitalize(s: string) {

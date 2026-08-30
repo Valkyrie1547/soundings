@@ -84,8 +84,8 @@ describe("buildDynamicVariables", () => {
 
   it("describes a resumed session from progress", () => {
     const v = buildDynamicVariables("rid-1", "bmw_customer", [
-      { questionId: "q2", summary: "Owned for three years." },
-      { questionId: "q3", summary: null },
+      { questionId: "q2", summary: "Owned for three years.", source: "tool" },
+      { questionId: "q3", summary: null, source: "tool" },
     ]);
     const q3 = guideFor("bmw_customer").find((q) => q.id === "q3")!;
     expect(v.is_resume).toBe(true);
@@ -107,14 +107,14 @@ describe("buildDynamicVariables", () => {
 
   it("takes the last topic from guide order, not answer order", () => {
     const v = buildDynamicVariables("rid-1", "bmw_customer", [
-      { questionId: "q5", summary: "s5" },
-      { questionId: "q2", summary: "s2" },
+      { questionId: "q5", summary: "s5", source: "tool" },
+      { questionId: "q2", summary: "s2", source: "tool" },
     ]);
     expect(v.last_topic).toBe(guideFor("bmw_customer").find((q) => q.id === "q5")!.topic);
   });
 
   it("ignores progress ids that are not in the guide", () => {
-    const v = buildDynamicVariables("rid-1", "bmw_customer", [{ questionId: "q99", summary: "x" }]);
+    const v = buildDynamicVariables("rid-1", "bmw_customer", [{ questionId: "q99", summary: "x", source: "tool" }]);
     expect(v.prior_context).toBe("(none)");
     expect(v.is_resume).toBe(true);
   });

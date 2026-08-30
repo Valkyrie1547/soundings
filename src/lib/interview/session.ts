@@ -1,9 +1,12 @@
 import { interviewGuideFor, type InterviewQuestion, type Outcome } from "@/config/study";
+import type { ProgressSource } from "@/db/schema";
 import type { DynamicVariables } from "./agent-config";
 
 export interface ProgressEntry {
   questionId: string;
   summary: string | null;
+  /** "tool" when the agent marked it. "transcript" when the backstop found the answer. */
+  source: ProgressSource;
 }
 
 const SEGMENT_LABEL: Record<Outcome, string> = {

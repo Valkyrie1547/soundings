@@ -39,6 +39,7 @@ function state(over: Partial<RespondentState> = {}): RespondentState {
     interviewStatus: "not_started",
     answers: {},
     interviewProgress: [],
+    transcriptConfirmed: [],
     interviewGuide: [],
     ...over,
   };
@@ -154,11 +155,11 @@ describe("POST /api/respondents/[id]/interview/progress", () => {
 
   it("marks a question with a summary cut to 500 characters", async () => {
     mocked.load.mockResolvedValue(state());
-    mocked.mark.mockResolvedValue([{ questionId: "q2", summary: "s" }]);
+    mocked.mark.mockResolvedValue([{ questionId: "q2", summary: "s", source: "tool" }]);
     const res = await postProgress(...call(ID, "POST", { questionId: "q2", summary: "x".repeat(600) }));
     expect(res.status).toBe(200);
     expect(mocked.mark).toHaveBeenCalledWith(ID, "q2", "x".repeat(500));
-    expect(await res.json()).toEqual({ progress: [{ questionId: "q2", summary: "s" }] });
+    expect(await res.json()).toEqual({ progress: [{ questionId: "q2", summary: "s", source: "tool" }] });
   });
 
   it("stores a null summary when none is given", async () => {
@@ -183,16 +184,16 @@ describe("POST /api/respondents/[id]/interview/end", () => {
 
   it("closes the segment and returns the gate result", async () => {
     mocked.load.mockResolvedValue(state());
-    mocked.end.mockResolvedValue({ complete: true, progress: [] });
+    mocked.end.mockResolvedValue({ complete: true, progress: [], backstop: ["q6"] });
     const res = await postEnd(...call(ID, "POST", { sessionId: SESSION, conversationId: "conv_1", reason: "dropped" }));
     expect(res.status).toBe(200);
     expect(mocked.end).toHaveBeenCalledWith(ID, "bmw_customer", SESSION, "conv_1", "dropped");
-    expect(await res.json()).toEqual({ complete: true, progress: [] });
+    expect(await res.json()).toEqual({ complete: true, progress: [], backstop: ["q6"] });
   });
 
   it("passes a null conversation id when none is given", async () => {
     mocked.load.mockResolvedValue(state());
-    mocked.end.mockResolvedValue({ complete: false, progress: [] });
+    mocked.end.mockResolvedValue({ complete: false, progress: [], backstop: [] });
     await postEnd(...call(ID, "POST", { sessionId: SESSION, reason: "user_ended" }));
     expect(mocked.end).toHaveBeenCalledWith(ID, "bmw_customer", SESSION, null, "user_ended");
   });

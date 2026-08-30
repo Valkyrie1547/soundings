@@ -9,11 +9,16 @@ import {
 } from "@/db/schema";
 import type { Outcome } from "@/config/study";
 import { agentId, elevenlabs } from "@/lib/elevenlabs";
-import { buildDynamicVariables, isComplete, type ProgressEntry } from "./session";
+import { findUnmarkedAnswers } from "./backstop";
+import { buildDynamicVariables, guideFor, isComplete, requiredIds, type ProgressEntry } from "./session";
 
 export async function loadProgress(respondentId: string): Promise<ProgressEntry[]> {
   const rows = await db()
-    .select({ questionId: interviewProgress.questionId, summary: interviewProgress.summary })
+    .select({
+      questionId: interviewProgress.questionId,
+      summary: interviewProgress.summary,
+      source: interviewProgress.source,
+    })
     .from(interviewProgress)
     .where(eq(interviewProgress.respondentId, respondentId))
     .orderBy(asc(interviewProgress.answeredAt));
@@ -26,6 +31,8 @@ export async function loadProgress(respondentId: string): Promise<ProgressEntry[
  * respondent is.
  */
 export async function startInterviewSession(respondentId: string, segment: Outcome) {
+  // A transcript that ElevenLabs processed after the last `end` gets its backstop here.
+  await applyBackstop(respondentId, segment, null);
   const progress = await loadProgress(respondentId);
   const prior = await db()
     .select({ attemptNo: interviewSessions.attemptNo })
@@ -68,9 +75,32 @@ export async function markAnswered(respondentId: string, questionId: string, sum
   return loadProgress(respondentId);
 }
 
+/** The completion gate. It reads the progress table and nothing else. */
+async function evaluateGate(respondentId: string, segment: Outcome) {
+  const progress = await loadProgress(respondentId);
+  const complete = isComplete(segment, new Set(progress.map((p) => p.questionId)));
+  return { complete, progress };
+}
+
+/** The gate, then the backstop when the gate says "incomplete", then the gate again. */
+async function gateWithBackstop(
+  respondentId: string,
+  segment: Outcome,
+  conversationId: string | null,
+  deps: BackstopDeps,
+) {
+  const gate = await evaluateGate(respondentId, segment);
+  if (gate.complete || !conversationId) return { ...gate, backstop: [] as string[] };
+  const backstop = await applyBackstop(respondentId, segment, conversationId, deps);
+  const after = backstop.length > 0 ? await evaluateGate(respondentId, segment) : gate;
+  return { ...after, backstop };
+}
+
 /**
  * Closes a segment. The server decides completion here, from the progress
- * table. It does not trust what the client reports.
+ * table. It does not trust what the client reports. When the gate says
+ * "incomplete", the transcript backstop gets a second opinion. The `deps`
+ * parameter is a seam for tests only.
  */
 export async function endInterviewSession(
   respondentId: string,
@@ -78,21 +108,87 @@ export async function endInterviewSession(
   sessionId: string,
   conversationId: string | null,
   reason: "completed" | "dropped" | "user_ended",
+  deps: BackstopDeps = defaultBackstopDeps,
 ) {
   await db()
     .update(interviewSessions)
     .set({ endedAt: new Date(), endReason: reason, conversationId })
     .where(and(eq(interviewSessions.id, sessionId), eq(interviewSessions.respondentId, respondentId)));
 
-  const progress = await loadProgress(respondentId);
-  const complete = isComplete(segment, new Set(progress.map((p) => p.questionId)));
-  if (complete) {
+  const result = await gateWithBackstop(respondentId, segment, conversationId, deps);
+  if (result.complete) {
     await db()
       .update(respondents)
       .set({ interviewStatus: "completed" })
       .where(eq(respondents.id, respondentId));
   }
-  return { complete, progress };
+  return result;
+}
+
+/** The I/O that the backstop needs. Tests replace it. Production uses the defaults. */
+export interface BackstopDeps {
+  loadTranscript: typeof loadTranscript;
+  /** Inserts one transcript-sourced row. It must not overwrite a row that exists. */
+  insert: (respondentId: string, questionId: string, summary: string) => Promise<void>;
+}
+
+async function insertFromTranscript(respondentId: string, questionId: string, summary: string) {
+  await db()
+    .insert(interviewProgress)
+    .values({ respondentId, questionId, summary, source: "transcript" })
+    .onConflictDoNothing();
+}
+
+const defaultBackstopDeps: BackstopDeps = {
+  loadTranscript: (respondentId) => loadTranscript(respondentId),
+  insert: insertFromTranscript,
+};
+
+/** Scans each transcript in order. An id found in one segment is not scanned again in the next. */
+async function insertCandidates(
+  respondentId: string,
+  segment: Outcome,
+  missing: string[],
+  transcripts: TranscriptTurn[][],
+  insert: BackstopDeps["insert"],
+): Promise<string[]> {
+  const inserted: string[] = [];
+  for (const turns of transcripts) {
+    const open = missing.filter((id) => !inserted.includes(id));
+    for (const c of findUnmarkedAnswers(guideFor(segment), open, turns)) {
+      await insert(respondentId, c.questionId, c.summary);
+      console.log(`backstop: ${c.questionId} from transcript, respondent ${respondentId}`);
+      inserted.push(c.questionId);
+    }
+  }
+  return inserted;
+}
+
+/**
+ * Reads the stored transcripts for evidence that a missing question was
+ * asked and answered. It inserts a progress row for each match. Pass a
+ * `conversationId` to scan one segment only. Pass null to scan every
+ * closed segment. It never runs when the gate is already complete. It
+ * never throws: a failure returns an empty list and the gate result stands.
+ */
+export async function applyBackstop(
+  respondentId: string,
+  segment: Outcome,
+  conversationId: string | null,
+  deps: BackstopDeps = defaultBackstopDeps,
+): Promise<string[]> {
+  try {
+    const answered = new Set((await loadProgress(respondentId)).map((p) => p.questionId));
+    const missing = requiredIds(segment).filter((id) => !answered.has(id));
+    if (missing.length === 0) return [];
+
+    const transcripts = (await deps.loadTranscript(respondentId))
+      .filter((s) => conversationId === null || s.conversationId === conversationId)
+      .flatMap((s) => (s.turns ? [s.turns] : []));
+    return await insertCandidates(respondentId, segment, missing, transcripts, deps.insert);
+  } catch {
+    return []; // The gate result stands. The next `start` tries again.
+  }
 }
 
 /**

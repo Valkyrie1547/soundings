@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import type { RespondentState } from "@/lib/survey/persist";
 import { loadOrCreateRespondent } from "@/lib/client/respondent";
-import { endInterview, reportProgress, startInterview } from "@/lib/client/interview";
+import { endInterview, reportProgress, startInterview, transcriptIds } from "@/lib/client/interview";
 import { CLIENT_TOOLS } from "@/lib/interview/agent-config";
 import { StudyShell } from "@/components/layout/StudyShell";
 import { Notice } from "@/components/ui/Notice";
@@ -32,6 +32,8 @@ function Interview() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [phase, setPhase] = useState<InterviewPhase>("loading");
   const [answered, setAnswered] = useState<string[]>([]);
+  // The answered ids that the transcript backstop marked. The checklist shows them differently.
+  const [fromTranscript, setFromTranscript] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   // True after the agent calls finish_interview. The call ends when the agent stops speaking.
   const [finishPending, setFinishPending] = useState(false);
@@ -55,6 +57,7 @@ function Interview() {
         if (state.interviewStatus === "completed") return router.replace("/transcript");
         setRespondent(state);
         setAnswered(state.interviewProgress);
+        setFromTranscript(state.transcriptConfirmed);
         setPhase(state.interviewStatus === "in_progress" ? "resume" : "ready");
       })
       .catch(() => !cancelled && setLoadFailed(true));
@@ -75,6 +78,7 @@ function Interview() {
       try {
         const result = await endInterview(respondent.id, sessionId, conversationIdRef.current, reason);
         setAnswered(result.progress.map((p) => p.questionId));
+        setFromTranscript(transcriptIds(result.progress));
         if (result.complete) {
           router.push("/transcript");
           return;
@@ -156,6 +160,7 @@ function Interview() {
       const session = await startInterview(respondent.id);
       sessionIdRef.current = session.sessionId;
       setAnswered(session.progress.map((p) => p.questionId));
+      setFromTranscript(transcriptIds(session.progress));
       startSession({
         signedUrl: session.signedUrl,
         connectionType: "websocket",
@@ -213,6 +218,7 @@ function Interview() {
           phase={phase}
           guide={guide}
           answered={answered}
+          fromTranscript={fromTranscript}
           complete={complete}
           isSpeaking={isSpeaking}
           connectionStatus={status}
