@@ -11,6 +11,7 @@
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
     "agent:setup": "node --env-file=.env.local --import tsx scripts/setup-agent.ts",
+    "agent:test": "node --env-file=.env.local --import tsx scripts/agent-tests/run.ts",
     "lint:complexity": "eslint --rule \"complexity: [warn, 5]\" src scripts",
     "test": "vitest run",
     "test:watch": "vitest"
