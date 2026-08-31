@@ -1,42 +1,40 @@
-# Soundings — design write-up
+# Soundings — write-up
 
 **Live:** https://soundings-xi.vercel.app · **Repo:** https://github.com/Valkyrie1547/soundings
 
-Soundings is a research pipeline in one session: a screening survey with terminate/qualify branching routes respondents into an ElevenLabs voice interview, and the transcript is stored and viewable. The BMW study is one JSON document loaded into it — not the product. This write-up covers the decisions and what they were traded against.
+Soundings is a research pipeline in one session: a screening survey with terminate/qualify branching routes respondents into an ElevenLabs voice interview, and the transcript is stored and viewable. Studies are JSON documents — the BMW study is one configuration of the pipeline, not the product — and a token-gated admin route can validate, preview, and publish new ones.
 
-## Stack choices
+## Technology choices and why
 
-**Next.js on Vercel.** The voice stream runs browser ↔ ElevenLabs directly over a websocket; our server only does short request/response work — mint identity, persist state, sign URLs, gate completion, fetch transcripts. That profile is exactly what serverless route handlers are for, so a separate backend (Express/Fastify on a VM, or a Railway worker) would have added an idle process and a second deploy for no benefit. Vercel's git-push deploys also meant the reviewer link existed from day one.
+**Next.js.** I've built with Next.js before, so setup was fast and familiar. Its serverless route handlers meant I never had to stand up a separate backend: the voice stream runs browser ↔ ElevenLabs directly, and everything the server actually does — issue respondent identity, persist state, sign URLs, gate completion, fetch transcripts — is short request/response work that fits API routes in the same repo as the UI.
 
-**Postgres over the alternatives.** The state here is relational and constraint-shaped: a respondent has many answers, sessions, and progress rows, and correctness depends on uniqueness. Two composite primary keys *are* the resumption logic — `(respondent_id, question_id)` makes a re-answer an upsert and a duplicate agent tool-call a no-op, with no application code. A document store (Mongo/Firestore) would push that de-duplication into the app; a KV store (Redis/Upstash) has no good answer for "all progress rows for this respondent, in answer order"; SQLite (Turso) would have worked but gives up `jsonb` querying over transcripts and study configs. Transcripts are KB-scale, so they live as `jsonb` rows rather than object storage — one database, one backup story.
+**Postgres.** The data here is relational and constraint-shaped: a respondent has many answers, sessions, and progress rows, and correctness depends on uniqueness. Composite primary keys do real work — a re-answer becomes an upsert and a duplicate agent tool-call becomes a no-op, with no application code. A document store would have pushed that de-duplication and integrity logic into the app; a relational database gives it to me in the schema.
 
-**Neon over Supabase/RDS/PlanetScale.** We needed Postgres over HTTP for serverless (no connection-pool exhaustion from parallel lambdas), instant provisioning, and nothing else. Supabase bundles auth, storage, and realtime we would not use — and its auth would have tempted us into accounts, which the design deliberately avoids (a respondent is a resumable UUID, not a login). RDS means VPC and pooler management for a take-home. PlanetScale is MySQL — no `jsonb`, weaker fit. Neon's `@neondatabase/serverless` driver + Drizzle gave typed SQL with one env var.
+**Neon.** Primarily familiarity — I've worked with Neon before — plus it's a natural fit for serverless: Postgres over HTTP (no connection-pool problems from parallel functions), instant provisioning, one env var.
 
-**Drizzle over Prisma.** Schema-as-TypeScript in one file, no codegen step, and the SQL stays visible — `onConflictDoUpdate` / `onConflictDoNothing` are the heart of the persistence layer and read as SQL. `drizzle-kit push` accepted the trade of no migration history for a single-developer sprint; migrations are the first thing to add for a real deployment.
+**Drizzle over Prisma.** Schema as plain TypeScript in one file, no codegen step, and the SQL stays visible — the `on conflict` clauses at the heart of the persistence layer read as SQL.
 
-## Resumption (the hard requirement)
+**Vercel.** Zero-config deploys from `main`, and it's the natural home for a Next.js app — the reviewer link existed from day one.
 
-ElevenLabs has no native conversation resumption, so a resumed interview is a **new session that only looks continuous**. The server is the memory:
+**Custom components over shadcn.** The UI needs about eight small primitives. A generated component library didn't earn its footprint, and every file being hand-written keeps the design opinionated (the sounding-line rail, the keyboard-first survey) and easy to walk through.
 
-- Every meaningful transition is persisted at the moment it happens: session open, each `mark_question_answered` client-tool call, session close. The client holds no state the flow depends on, so refresh, tab-close (a `pagehide` keepalive beacon records the drop), and network loss all collapse into one resume path.
-- On the next start, the server builds **dynamic variables** from the database — answered ids, remaining count, a per-answer summary digest, and a scripted opening line ("Welcome back. Last time we were just discussing your satisfaction rating…"). The agent prompt itself never changes; `is_resume` comes from the attempt number, so pausing before the first answer doesn't replay the introduction.
-- **Completion is decided server-side only**: the required-id set for the respondent's segment against the progress table, re-checked at every segment close. The client's checklist is a view of it, not the authority.
-- The one unrecoverable failure — the LLM asks a question, hears an answer, and forgets the tool call — has a deterministic **transcript backstop**: at segment close, if the gate says incomplete, the stored transcript is scanned for the question's wording (anchor phrase or ≥60 % content-word overlap) followed by a substantive answer, and the progress row is inserted with `source='transcript'` (shown as a hollow diamond, never overwriting a tool row). An LLM-judged variant was deliberately deferred: the deterministic matcher is testable and cannot hallucinate a completion.
+## Challenges faced and how I solved them
 
-## The agent is code, and it is study-agnostic
+**Transcripts arrived before they existed.** The app fetches the transcript as soon as the call ends — but ElevenLabs takes a few seconds to assemble it, so the fetch came back empty and an empty transcript got stored permanently. The fix was a polling mechanism: the transcript page polls, and the server only stores a conversation once the platform reports it finished; until then the page shows a loading state and retries.
 
-The agent, its tools, and its settings live in one TypeScript file pushed by `npm run agent:setup`; nothing exists only in the dashboard. The prompt is generic — the question guide arrives as a dynamic variable — so **one agent serves every study**. This is the alternative to per-study prompts, which is where most of our by-ear prompt bugs (narrating instructions, "are you still there?" during a requested pause) would have multiplied. Those fixes — scripted silence lines plus the platform's 30 s turn timeout — harden a single prompt once.
+**Resumption, since the platform has none.** ElevenLabs has no native way to resume a conversation, so a resumed interview is a new session that has to *look* continuous. This took real iteration on the agent's system prompt and the setup script: handling a respondent who pauses, closes the tab, or navigates away and comes back; making the moderator greet a returning respondent correctly ("Welcome back — last time we were discussing your satisfaction rating") instead of re-introducing the study; and injecting context on every session start — which questions are answered, one-line summaries of prior answers, what remains — so the moderator picks up exactly where the conversation left off. All of that context is built server-side from the database and handed to the agent as dynamic variables; the prompt itself never changes.
 
-## Extensibility: studies as data
+**Finding these bugs repeatably.** Many of the issues above were first found by ear in manual runs. What made them solvable was building agent testing on ElevenLabs' conversation-simulation API — effectively integration tests: each test simulates a full call against the real agent with an AI respondent persona, produces a transcript, and asserts on the moderator's behavior and tool calls. Every bug I heard became a scenario (skip requests, silence handling, both resume shapes, early stops, segment routing), so fixes could be verified instead of re-listened for — and the suite caught a real one I never heard myself: the moderator occasionally ended the call without recording the final answer.
 
-A study is a zod-validated JSON document: screening (with terminate/qualify effects and outcome precedence), segments, the interview guide with per-segment audiences, theme, and copy. One document per study — screening and interview can never drift apart. Documents in `studies/` are seeded into a versioned `studies` table; each respondent is pinned to `(study_id, study_version)` so a published change never re-shapes an interview in progress. Studies run at `/s/<id>`; a second sample study (coffee subscriptions, different segments and guide) proves the point — the unchanged agent passed a live simulated interview of it on the first run.
+## What I'd improve with more time
 
-A token-gated `/admin` closes the loop without a deploy: paste JSON → validate (schema errors with paths) → preview the flow per segment → publish (the registry assigns the next version) → run one simulated interview against the live agent before any real respondent hears the new guide.
+- **UI polish** — more motion and finish across the survey and call screens.
+- **A real admin data pipeline** — processing and storing more per-study data, not just raw responses.
+- **Roles and a metrics dashboard** — log in as an admin and see response rates, completion rates, and drop-off per study.
+- **Inference over results** — the data is stored but not yet interpreted; summarizing what respondents actually said per question and per segment is the obvious next layer.
+- **More robust testing** — broader unit coverage and more simulation scenarios, run in CI before the agent can be updated.
+- **Agentic study creation** — today a new study is pasted JSON (validated, previewed, published through the admin). The endgame: describe your study to a voice agent — the screening questions, how each answer routes, the respondent buckets, the interview guide — and have it build and publish the whole study for you.
 
-## Testing
+## Time spent
 
-166 unit tests (Vitest, colocated, no network) cover the pure core: survey engine, guide/session builders, the backstop matcher on fixture transcripts, the study schema's referential rules, the registry, route handlers with persistence mocked, and client identity — with a coverage gate. Separately, `npm run agent:test` runs the real agent against AI-simulated respondents (`simulateConversation`) across eight scenarios — happy path, skip requests, silence handling, mid-interview and pre-first-answer resumes, early stop, segment routing, and the second study — asserting on tool calls and evaluation criteria. Prompt bugs found by ear became repeatable scenarios.
-
-## What I'd do next
-
-Post-call webhook ingestion instead of polled transcript fetches; Drizzle migrations; the LLM-judged backstop behind a flag; audio recording playback; magic-link resume across devices; rate limiting on the public API.
+Roughly 6–8 hours.
