@@ -37,4 +37,4 @@ Soundings is a research pipeline in one session: it features a screening survey 
 
 ## Time spent
 
-Roughly 6-8 hours.
+Roughly 10 hours.
