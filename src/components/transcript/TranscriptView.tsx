@@ -127,7 +127,15 @@ function Segment({ segment }: { segment: TranscriptSegment }) {
 /** The turns of one segment, or a status message when there are none. */
 function Turns({ turns }: { turns: TranscriptTurn[] | null }) {
   if (turns === null) {
-    return <p className="text-[15px] text-muted">Still processing at ElevenLabs — this refreshes on its own.</p>;
+    return (
+      <p role="status" aria-live="polite" className="flex items-center gap-2.5 text-[15px] text-muted">
+        <span
+          aria-hidden
+          className="size-4 shrink-0 animate-spin rounded-full border-2 border-line border-t-accent motion-reduce:animate-none"
+        />
+        Preparing your transcript…
+      </p>
+    );
   }
   if (turns.length === 0) {
     return <p className="text-[15px] text-muted">No speech was recorded in this session.</p>;
